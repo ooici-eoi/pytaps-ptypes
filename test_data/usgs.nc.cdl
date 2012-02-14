@@ -1,0 +1,74 @@
+netcdf usgs_01184000_dv {
+dimensions:
+	time = UNLIMITED ; // (156 currently)
+variables:
+	int stnId ;
+		stnId:long_name = "station id" ;
+		stnId:cf_role = "timeseries_id" ;
+	float lon ;
+		lon:long_name = "longitude" ;
+		lon:standard_name = "longitude" ;
+		lon:units = "degree_east" ;
+		lon:_CoordinateAxisType = "Lon" ;
+	float lat ;
+		lat:long_name = "latitude" ;
+		lat:standard_name = "latitude" ;
+		lat:units = "degree_north" ;
+		lat:_CoordinateAxisType = "Lat" ;
+	int time(time) ;
+		time:long_name = "time" ;
+		time:standard_name = "time" ;
+		time:units = "seconds since 1970-01-01 00:00:00" ;
+		time:_CoordinateAxisType = "Time" ;
+	float z ;
+		z:standard_name = "depth" ;
+		z:long_name = "depth below mean sea level" ;
+		z:units = "m" ;
+		z:positive = "down" ;
+		z:missing_value = -9999.f ;
+		z:_CoordinateAxisType = "Height" ;
+		z:_CoordinateZisPositive = "down" ;
+	float water_height(time) ;
+		water_height:units = "ft" ;
+		water_height:long_name = "water surface height in feet" ;
+		water_height:coordinates = "time lon lat" ;
+		water_height:standard_name = "water_surface_height_above_reference_datum" ;
+	byte data_qualifier(time) ;
+		data_qualifier:long_name = "Data Qualifier" ;
+		data_qualifier:coordinates = "time lon lat" ;
+		data_qualifier:valid_range = 1b, 2b ;
+		data_qualifier:_FillValue = 0b ;
+		data_qualifier:flag_values = 1b, 2b ;
+		data_qualifier:flag_meanings = "provisional approved" ;
+	float water_temperature(time) ;
+		water_temperature:units = "degree_Celsius" ;
+		water_temperature:long_name = "temperature of the water at position, in degrees celsius" ;
+		water_temperature:coordinates = "time lon lat" ;
+	float streamflow(time) ;
+		streamflow:units = "ft3 s-1" ;
+		streamflow:long_name = "water volume transport into sea water from rivers at position, in cubic feet per second." ;
+		streamflow:coordinates = "time lon lat" ;
+		streamflow:standard_name = "water_volume_transport_into_sea_water_from_rivers" ;
+	float water_height_datum ;
+		water_height_datum:units = "ft" ;
+		water_height_datum:long_name = "the (geometric) height above the geoid, which is the reference geopotential surface. The geoid is similar to mean sea level. \'Water surface reference datum altitude\' means the altitude of the arbitrary datum referred to by a quantity with standard name \'water_surface_height_above_reference_datum\'" ;
+		water_height_datum:standard_name = "water_surface_reference_datum_altitude" ;
+
+// global attributes:
+		:CF\:featureType = "station" ;
+		:Conventions = "CF-1.5" ;
+		:history = "Converted from WaterML1.1 to OOI CDM by net.ooici.eoi.datasetagent.impl.UsgsAgent" ;
+		:references = "http://waterservices.usgs.gov/rest/DV-Service.html" ;
+		:title = "CONNECTICUT RIVER AT THOMPSONVILLE CT (01184000) - Daily Value" ;
+		:source = "Daily Values Webservice (http://waterservices.usgs.gov/mwis/dv?)" ;
+		:institution = "USGS NWIS" ;
+		:ion_time_coverage_start = "2011-08-15T00:00:00.000Z" ;
+		:ion_time_coverage_end = "2012-01-18T00:00:00.000Z" ;
+		:ion_geospatial_lat_min = 41.9873199462891 ;
+		:ion_geospatial_lat_max = 41.9873199462891 ;
+		:ion_geospatial_lon_min = -72.6053695678711 ;
+		:ion_geospatial_lon_max = -72.6053695678711 ;
+		:ion_geospatial_vertical_min = 0. ;
+		:ion_geospatial_vertical_max = 0. ;
+		:ion_geospatial_vertical_positive = "down" ;
+}

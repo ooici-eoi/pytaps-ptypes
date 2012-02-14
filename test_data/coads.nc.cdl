@@ -1,0 +1,63 @@
+netcdf coads {
+dimensions:
+	COADSX = 180 ;
+	COADSY = 90 ;
+	TIME = UNLIMITED ; // (12 currently)
+variables:
+	double COADSX(COADSX) ;
+		COADSX:units = "degrees_east" ;
+		COADSX:modulo = " " ;
+		COADSX:point_spacing = "even" ;
+	double COADSY(COADSY) ;
+		COADSY:units = "degrees_north" ;
+		COADSY:point_spacing = "even" ;
+	double TIME(TIME) ;
+		TIME:units = "hour since 0000-01-01 00:00:00" ;
+		TIME:time_origin = "1-JAN-0000 00:00:00" ;
+		TIME:modulo = " " ;
+	float SST(TIME, COADSY, COADSX) ;
+		SST:missing_value = -1.e+34f ;
+		SST:_FillValue = -1.e+34f ;
+		SST:long_name = "SEA SURFACE TEMPERATURE" ;
+		SST:history = "From coads_climatology" ;
+		SST:units = "Deg C" ;
+	float AIRT(TIME, COADSY, COADSX) ;
+		AIRT:missing_value = -1.e+34f ;
+		AIRT:_FillValue = -1.e+34f ;
+		AIRT:long_name = "AIR TEMPERATURE" ;
+		AIRT:history = "From coads_climatology" ;
+		AIRT:units = "DEG C" ;
+	float SPEH(TIME, COADSY, COADSX) ;
+		SPEH:missing_value = -1.e+34f ;
+		SPEH:_FillValue = -1.e+34f ;
+		SPEH:long_name = "SPECIFIC HUMIDITY" ;
+		SPEH:history = "From coads_climatology" ;
+		SPEH:units = "G/KG" ;
+	float WSPD(TIME, COADSY, COADSX) ;
+		WSPD:missing_value = -1.e+34f ;
+		WSPD:_FillValue = -1.e+34f ;
+		WSPD:long_name = "WIND SPEED" ;
+		WSPD:history = "From coads_climatology" ;
+		WSPD:units = "M/S" ;
+	float UWND(TIME, COADSY, COADSX) ;
+		UWND:missing_value = -1.e+34f ;
+		UWND:_FillValue = -1.e+34f ;
+		UWND:long_name = "ZONAL WIND" ;
+		UWND:history = "From coads_climatology" ;
+		UWND:units = "M/S" ;
+	float VWND(TIME, COADSY, COADSX) ;
+		VWND:missing_value = -1.e+34f ;
+		VWND:_FillValue = -1.e+34f ;
+		VWND:long_name = "MERIDIONAL WIND" ;
+		VWND:history = "From coads_climatology" ;
+		VWND:units = "M/S" ;
+	float SLP(TIME, COADSY, COADSX) ;
+		SLP:missing_value = -1.e+34f ;
+		SLP:_FillValue = -1.e+34f ;
+		SLP:long_name = "SEA LEVEL PRESSURE" ;
+		SLP:history = "From coads_climatology" ;
+		SLP:units = "MB" ;
+
+// global attributes:
+		:history = "FERRET V4.45 (GUI) 22-May-97" ;
+}

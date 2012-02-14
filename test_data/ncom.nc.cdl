@@ -1,0 +1,93 @@
+netcdf ncom {
+dimensions:
+	depth = 34 ;
+	lat = 57 ;
+	lon = 89 ;
+	time = UNLIMITED ; // (5 currently)
+variables:
+	double depth(depth) ;
+		depth:long_name = "Depth" ;
+		depth:units = "meter" ;
+		depth:NAVO_code = 5 ;
+		depth:positive = "down" ;
+	double lat(lat) ;
+		lat:long_name = "Latitude" ;
+		lat:units = "degrees_north" ;
+		lat:NAVO_code = 1 ;
+	double lon(lon) ;
+		lon:long_name = "Longitude" ;
+		lon:units = "degrees_east" ;
+		lon:NAVO_code = 2 ;
+	short salinity(time, depth, lat, lon) ;
+		salinity:long_name = "Salinity" ;
+		salinity:units = "psu" ;
+		salinity:NAVO_code = 16 ;
+		salinity:_FillValue = -30000s ;
+		salinity:missing_value = -30000s ;
+		salinity:scale_factor = 0.001f ;
+		salinity:add_offset = 20.f ;
+	short surf_el(time, lat, lon) ;
+		surf_el:long_name = "Water Surface Elevation" ;
+		surf_el:positive = "up" ;
+		surf_el:units = "meter" ;
+		surf_el:NAVO_code = 32 ;
+		surf_el:_FillValue = -30000s ;
+		surf_el:missing_value = -30000s ;
+		surf_el:scale_factor = 0.001f ;
+		surf_el:add_offset = 0.f ;
+	double tau(time) ;
+		tau:long_name = "Tau" ;
+		tau:units = "hours since analysis" ;
+		tau:NAVO_code = 56 ;
+		tau:time_origin = "2006-09-26 00:00:00             " ;
+	double time(time) ;
+		time:long_name = "Valid Time" ;
+		time:units = "hour since 2000-01-01 00:00:00" ;
+		time:NAVO_code = 13 ;
+		time:time_origin = "2000-01-01 00:00:00" ;
+	short water_temp(time, depth, lat, lon) ;
+		water_temp:long_name = "Water Temperature" ;
+		water_temp:units = "degC" ;
+		water_temp:NAVO_code = 15 ;
+		water_temp:_FillValue = -30000s ;
+		water_temp:missing_value = -30000s ;
+		water_temp:scale_factor = 0.001f ;
+		water_temp:add_offset = 20.f ;
+	short water_u(time, depth, lat, lon) ;
+		water_u:long_name = "Eastward Water Velocity" ;
+		water_u:units = "meter/sec" ;
+		water_u:NAVO_code = 17 ;
+		water_u:_FillValue = -30000s ;
+		water_u:missing_value = -30000s ;
+		water_u:scale_factor = 0.001f ;
+		water_u:add_offset = 0.f ;
+	short water_v(time, depth, lat, lon) ;
+		water_v:long_name = "Northward Water Velocity" ;
+		water_v:units = "meter/sec" ;
+		water_v:NAVO_code = 18 ;
+		water_v:_FillValue = -30000s ;
+		water_v:missing_value = -30000s ;
+		water_v:scale_factor = 0.001f ;
+		water_v:add_offset = 0.f ;
+
+// global attributes:
+		:classification_level = "UNCLASSIFIED" ;
+		:distribution_statement = "Approved for public release. Distribution unlimited." ;
+		:downgrade_date = "not applicable" ;
+		:classification_authority = "not applicable" ;
+		:institution = "Naval Oceanographic Office" ;
+		:contact = "NAVO, N33" ;
+		:history = "Tue Dec 20 14:31:17 2011: ncks -d time,0,4 ncom_o.nc ncom.nc\n",
+			"Thu Sep 28 10:38:58 2006: ncks -d lon,117.0,128.0 -d lat,0.0,8.0 ncom_glb_scs_2006092600.nc ncom_glb_scs_2006092600_subset.nc\n",
+			"created on 20060926" ;
+		:generating_model = "Global NCOM with OSU tides" ;
+		:operational_status = "development" ;
+		:model_type = "x-curvilinear lon, y-curvilinear lat, z-sigma_z" ;
+		:input_data_source = "FNMOC NOGAPS, NAVO MODAS, NAVO NLOM" ;
+		:Conventions = "NAVO_netcdf_v1.0" ;
+		:message = "UNCLASSIFIED" ;
+		:reference = "https://www.navo.navy.mil/" ;
+		:comment = "..." ;
+		:time_origin = "2006-09-26 00:00:00" ;
+		:NCO = "4.0.7" ;
+}

@@ -1,0 +1,10 @@
+*.kpf
+*.pyc
+*.swp
+*.*.swp
+.*.*.swo
+*.log
+*.pid
+*.komodo*
+
+.DS_Store
