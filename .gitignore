@@ -6,5 +6,6 @@
 *.log
 *.pid
 *.komodo*
+*.idea*
 
 .DS_Store
