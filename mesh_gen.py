@@ -3,13 +3,6 @@
 from itaps import iBase, iMesh
 import utils, argparse, time
 
-def make_coords(x_cnt, y_cnt, z_cnt):
-    if z_cnt > 1:
-        coords=[[x,y,z] for z in xrange(z_cnt) for y in xrange(y_cnt) for x in xrange(x_cnt)]
-    else:
-        coords=[[x,y,0] for y in xrange(y_cnt) for x in xrange(x_cnt)]
-
-    return coords
 
 def make_2d(mesh, dims):
     print ">>>>>> make_2d"
@@ -18,7 +11,7 @@ def make_2d(mesh, dims):
 
     print "--> make_coords"
     t0=time.time()
-    coords=make_coords(x,y,1)
+    coords=utils.make_coords(x,y,1)
     print "    %.1f ms" % ((time.time()-t0)*1000)
 
     print "--> createVtx"
@@ -52,7 +45,7 @@ def make_3d(mesh, dims, t3d):
 
     print "--> make_coords"
     t0=time.time()
-    coords=make_coords(x,y,z)
+    coords=utils.make_coords(x,y,z)
     print "    %.1f ms" % ((time.time()-t0)*1000)
 
     print "--> createVtx"

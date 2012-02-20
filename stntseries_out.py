@@ -82,7 +82,9 @@ if args.do_plot:
 
         dtags=mesh.getAllTags(stn_set)
         for dt in dtags:
-            data=dt[stn_set]
+            dtc,_=utils.unpack_data_tag_name(dt.name)
+            data=utils.get_packed_data(dt, stn_set, dtc)
+
             if not dt.name in data_map:
                 data_map[dt.name] = data
             else:
@@ -96,8 +98,8 @@ if args.do_plot:
     fig = figure()
     i=1
     for var in data_map:
+        dtc, varname=utils.unpack_data_tag_name(var)
         data=data_map[var]
-        dtc, varname=utils.unpack_data_tag_name(data_t.name)
         print "  > Plotting data for %s" % varname
         fill_val=numpy.nan
         scale_factor=None
