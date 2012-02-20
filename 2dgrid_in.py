@@ -51,7 +51,7 @@ for y in range(y_cnt):
 del icoords
 
 # Create the vertices
-verts=mesh.createVtx(coords)
+verts=mesh.createVtx(utils.make_coords(x_cnt, y_cnt, z))
 nverts=len(verts)
 # Add the vertices as an EntitySet that is ordered and doesn't contain duplicates
 #  Unnecessary and only complicates structure
@@ -64,6 +64,10 @@ vert_arr = utils.make_quadrilateral_vertex_array(verts=verts, x_cnt=x_cnt, y_cnt
 
 quads,status=mesh.createEntArr(iMesh.Topology.quadrilateral,vert_arr)
 nquads=len(quads)
+
+## Create Geocoordinate tag
+geo_tag=mesh.createTag('GEOCOORDINATES',3,numpy.float)
+geo_tag[verts]=coords
 
 ## Create tags for each data_variable
 utils.make_data_tags(mesh, ds, var_map['data'], nquads)

@@ -47,7 +47,11 @@ if z_cnt > 0:
 
 coord = [x_coords[0],y_coords[0],z_crd]
 
-stn_loc=mesh.createVtx(coord)
+stn_loc=mesh.createVtx([0,0,0])
+
+## Create Geocoordinate tag
+geo_tag=mesh.createTag('GEOCOORDINATES',3,numpy.float)
+geo_tag[stn_loc]=coord
 
 ## Create tags for each data_variable
 utils.make_data_tags(mesh, ds, var_map['data'], 1)
