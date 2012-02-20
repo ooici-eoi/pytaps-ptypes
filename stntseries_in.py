@@ -5,7 +5,7 @@ from pylab import *
 import utils
 import argparse
 
-parser = argparse.ArgumentParser(description='Process a structured grid to an imesh representation')
+parser = argparse.ArgumentParser(description='Process a Timeseries to an imesh representation')
 #parser.add_argument('--a', action='store_true', dest='is_ast2', help='If the ast2.nc sample grid should be processed; otherwise process the ncom.nc sample')
 args=parser.parse_args()
 

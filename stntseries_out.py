@@ -8,7 +8,7 @@ import utils
 import argparse
 
 
-parser = argparse.ArgumentParser(description='Process a structured grid to an imesh representation')
+parser = argparse.ArgumentParser(description='Read and display a an imesh Timeseries representation')
 #parser.add_argument('--c', action='store_true', dest='is_coads', help='Process the coards.nc sample grid; otherwise process the ncom.nc sample')
 parser.add_argument('--p', action='store_true', dest='do_plot', help='Plot the data for each time and variable')
 args=parser.parse_args()

@@ -7,7 +7,7 @@ from pylab import *
 import utils
 import argparse
 
-parser = argparse.ArgumentParser(description='Process a structured grid to an imesh representation')
+parser = argparse.ArgumentParser(description='Read amd display an imesh structured grid representation')
 parser.add_argument('--c', action='store_true', dest='is_coads', help='If the coards.nc sample grid should be processed; otherwise process the ncom.nc sample')
 args=parser.parse_args()
 
