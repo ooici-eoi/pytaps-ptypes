@@ -1,7 +1,36 @@
 #!/usr/bin/env python
 
 from itaps import iBase, iMesh, iGeom
-import numpy
+import numpy as np
+
+def print_mesh_types(mesh):
+    print "Mesh [%s]:" \
+          "\n\t%d EntitySets" \
+          "\n\t%d vertices" \
+          "\n\t%d faces" \
+          "\n\t%d edges" \
+          "\n\t%d regions" % (mesh,
+                              len(mesh.getEntSets()),
+                              mesh.getNumOfType(iBase.Type.vertex),
+                              mesh.getNumOfType(iBase.Type.face),
+                              mesh.getNumOfType(iBase.Type.edge),
+                              mesh.getNumOfType(iBase.Type.region))
+
+def make_coords(x_cnt, y_cnt, z_cnt):
+    if z_cnt > 1:
+        coords=[[x,y,z] for z in xrange(z_cnt) for y in xrange(y_cnt) for x in xrange(x_cnt)]
+    else:
+        coords=[[x,y,0] for y in xrange(y_cnt) for x in xrange(x_cnt)]
+
+    return coords
+
+def make_quadrilateral_vertex_array_new(verts, x_cnt):
+    vert_arr=[]
+    for x in (x for x in xrange(len(verts)-x_cnt-1) if (x+1) % x_cnt != 0):
+        vert_arr.extend(verts[x:x+2])
+        vert_arr.extend(verts[x+1+x_cnt:x+x_cnt-1:-1])
+
+    return vert_arr
 
 def make_quadrilateral_vertex_array(verts, x_cnt, y_cnt):
     vert_arr=[]
@@ -13,7 +42,8 @@ def make_quadrilateral_vertex_array(verts, x_cnt, y_cnt):
             b=xi+1
             c=(((y+1)*x_cnt+xi)+1)-(x_cnt*y)
             d=(((y+1)*x_cnt+xi))-(x_cnt*y)
-            #            print a,b,c,d
+#            print a,b,c,d
+
             try:
                 vert_arr+=[verts[a],verts[b],verts[c],verts[d]]
             except IndexError as ie:
@@ -21,45 +51,79 @@ def make_quadrilateral_vertex_array(verts, x_cnt, y_cnt):
 
     return vert_arr
 
-def centroid_to_vertex_coords(x_coords, y_coords):
-    #    x_cnt=len(x_coords)
-    #    print "original x_cnt: %s" % x_cnt
-    dxarr=(x_coords[1:]-x_coords[0:-1])
+def make_hexahedron_vertex_array_new(verts, x_cnt, y_cnt, z_cnt):
+    vert_arr=[]
+    zii=0
+    for z in range(z_cnt-1):
+        zi=(x_cnt*y_cnt)*(z+1)
+        for x in (x for x in xrange((len(verts)/z_cnt)-x_cnt-1) if (x+1) % x_cnt != 0):
+            vert_arr.extend(verts[x+zii:x+2+zii])
+            vert_arr.extend(verts[x+1+x_cnt+zii:x+x_cnt-1+zii:-1])
+            vert_arr.extend(verts[x+zi:x+zi+2])
+            vert_arr.extend(verts[x+1+x_cnt+zi:x+x_cnt-1+zi:-1])
+
+        zii=zi
+
+    return vert_arr
+
+def make_hexahedron_vertex_array(verts, x_cnt, y_cnt, z_cnt):
+    vert_arr=[]
+    zii=0
+    for z in range(z_cnt-1):
+        zi=(x_cnt*y_cnt)*(z+1)
+#        print zi
+        for y in range(y_cnt-1):
+            for x in range(x_cnt-1):
+                xi=x+x_cnt*y
+
+                a=xi
+                b=xi+1
+                c=(((y+1)*x_cnt+xi)+1)-(x_cnt*y)
+                d=(((y+1)*x_cnt+xi))-(x_cnt*y)
+
+                e=a+zi
+                f=b+zi
+                g=c+zi
+                h=d+zi
+
+                a+=zii
+                b+=zii
+                c+=zii
+                d+=zii
+
+#                print a,b,c,d,e,f,g,h
+
+                try:
+                    vert_arr+=[verts[a],verts[b],verts[c],verts[d],
+                               verts[e],verts[f],verts[g],verts[h]]
+                except IndexError as ie:
+                    raise ie
+        zii=zi
+
+    return vert_arr
+
+def extend_uniform_array(arr):
+    dxarr=arr[1:]-arr[:-1]
     if dxarr.std() != 0.0:
-        raise Exception("Non-uniform x array")
+        raise Exception("Cannot extend non-uniform array")
     dx=dxarr.mean()
-    #    print "delta_x: %f" % dx
-    #    print "Shift the x array by -delta_x/2 and add 1 value to the end of the array == x_coords[-1]+delta_x"
-    x_coords-=(dx*0.5)
-    x_coords=numpy.append(x_coords,[x_coords[-1]+dx])
-    #    x_cnt=len(x_coords)
-    #    print "new x_cnt: %s" % x_cnt
+    arr-=(dx*0.5)
+    arr=np.append(arr,[arr[-1]+dx])
+    return arr
 
-    #    y_cnt=len(y_coords)
-    #    print "original y_cnt: %s" % y_cnt
-    dyarr=(y_coords[1:]-y_coords[0:-1])
-    if dyarr.std() != 0.0:
-        raise Exception("Non-uniform y array")
-    dy=dyarr.mean()
-    #    print "delta_y: %f" % dx
-    #    print "Shift the y array by -delta_y/2 and add 1 value to the end of the array == y_coords[-1]+delta_y"
-    y_coords-=(dy*0.5)
-    y_coords=numpy.append(y_coords,[y_coords[-1]+dy])
-    #    y_cnt=len(y_coords)
-    #    print "new y_cnt: %s" % y_cnt
-
-    return x_coords, y_coords
+def centroid_to_vertex_coords(x_coords, y_coords):
+    return extend_uniform_array(x_coords), extend_uniform_array(y_coords)
 
 def process_attribute(mesh, attr_name, attr_val):
     if type(attr_val) in [unicode, str]:
-        dtype=numpy.byte
-        arr=numpy.fromstring(attr_val,dtype=dtype)
+        dtype=np.byte
+        arr=np.fromstring(attr_val,dtype=dtype)
     else:
-        dtype=numpy.typeDict[attr_val.dtype.char]
-        if dtype == numpy.int16:
-            dtype = numpy.int32
-        elif dtype == numpy.float32:
-            dtype = numpy.float64
+        dtype=np.typeDict[attr_val.dtype.char]
+        if dtype == np.int16:
+            dtype = np.int32
+        elif dtype == np.float32:
+            dtype = np.float64
         arr=attr_val
 
     mesh.createTag(attr_name,arr.size,dtype)[mesh.rootSet]=arr
@@ -119,10 +183,10 @@ def report_entset_contents(mesh, entity_set, indent=""):
     print indent+"}"
 
 def set_packed_data(tag, key, value):
-    tag[key] = numpy.frombuffer(numpy.asarray(value), dtype=numpy.byte)
+    tag[key] = np.frombuffer(np.asarray(value), dtype=np.byte)
 
 def get_packed_data(tag, key, dtype):
-    return numpy.frombuffer(tag[key], dtype=dtype)
+    return np.frombuffer(tag[key], dtype=dtype)
 
 def pack_data_tag_name(varname, dtype_char):
     return 'DATA_%s_%s' % (dtype_char, varname)
@@ -137,7 +201,7 @@ def make_data_tags(mesh, ds, data_vars, data_dim):
         var=ds.variables[varn]
         dt=var.dtype
         ## By using the packing methods above, all tags can be made as the byte type
-        mesh.createTag(pack_data_tag_name(varn, dt.char), (data_dim*dt.itemsize), numpy.byte)
+        mesh.createTag(pack_data_tag_name(varn, dt.char), (data_dim*dt.itemsize), np.byte)
 
 def make_var_attr_tags(mesh, ds):
     for varn in ds.variables:
