@@ -82,11 +82,11 @@ tvar=ds.variables[tvarn]
 ntimes=tvar.size
 time_tag=mesh.createTag('TIME_DATA',1,iMesh.EntitySet)
 tarr=tvar[:]
-coords=[]
+tcoords=[]
 for t in range(ntimes):
-    coords+=[[tarr[t],0,0]]
+    tcoords+=[[tarr[t],0,0]]
 
-t_verts=mesh.createVtx(coords)
+t_verts=mesh.createVtx(tcoords)
 
 tline_verts=[]
 for t in range(len(t_verts)-1):
