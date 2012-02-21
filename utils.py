@@ -144,10 +144,10 @@ def make_hexahedron_vertex_array_old(verts, x_cnt, y_cnt, z_cnt):
     return vert_arr
 
 def extend_uniform_array(arr):
-    dxarr=arr[1:]-arr[:-1]
-    if dxarr.std() != 0.0:
+    darr=arr[1:]-arr[:-1]
+    if darr.std() > 1e-5:
         raise Exception("Cannot extend non-uniform array")
-    dx=dxarr.mean()
+    dx=darr.mean()
     arr-=(dx*0.5)
     arr=np.append(arr,[arr[-1]+dx])
     return arr

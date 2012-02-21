@@ -10,6 +10,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Process a structured grid to an imesh representation')
 parser.add_argument('--c', action='store_true', dest='is_coads', help='Process the coards.nc sample grid; otherwise process the ncom.nc sample')
+parser.add_argument('--r', action='store_true', dest='is_hfr', help='Process the hfr.nc sample grid; otherwise process the ncom.nc sample')
 parser.add_argument('--p', action='store_true', dest='do_plot', help='Plot the data for each time and variable')
 parser.add_argument('time_indices', metavar='N', type=int, nargs='*',
     help='comma separated list of the temporal indices to plot; if empty, plot all times')
@@ -17,6 +18,8 @@ args=parser.parse_args()
 
 if args.is_coads:
     in_path = 'test_data/coads.h5m'
+elif args.is_hfr:
+    in_path = 'test_data/hfr.h5m'
 else:
     in_path = 'test_data/ncom.h5m'
 

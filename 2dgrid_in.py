@@ -8,7 +8,8 @@ import utils
 import argparse
 
 parser = argparse.ArgumentParser(description='Read amd display an imesh structured grid representation')
-parser.add_argument('--c', action='store_true', dest='is_coads', help='If the coards.nc sample grid should be processed; otherwise process the ncom.nc sample')
+parser.add_argument('--c', action='store_true', dest='is_coads', help='If the coards.nc sample grid should be processed; default processes the ncom.nc sample')
+parser.add_argument('--r', action='store_true', dest='is_hfr', help='If the hfr.nc sample grid should be processed; default processes the ncom.nc sample')
 args=parser.parse_args()
 
 # Setup the config for this dataset - this comes with the ExternalDataset (info provided by the registrant)
@@ -18,6 +19,11 @@ if args.is_coads:
     var_map['data']=['SST','AIRT','SPEH','WSPD','UWND','VWND','SLP']
     in_path='test_data/coads.nc'
     out_path='test_data/coads.h5m'
+elif args.is_hfr:
+    var_map['coords']={'t_var':'time','x_var':'lon','y_var':'lat','z_var':None}
+    var_map['data']=['u','v','DOPy','DOPx']
+    in_path='test_data/hfr.nc'
+    out_path='test_data/hfr.h5m'
 else:
     var_map['coords']={'t_var':'time','x_var':'lon','y_var':'lat','z_var':'depth'}
     var_map['data']=['salinity','surf_el','water_temp','water_u','water_v']
@@ -60,7 +66,7 @@ nverts=len(verts)
 
 # Create quadrilateral entities
 # Build the appropriate vertex-array from the vertices
-vert_arr = utils.make_quadrilateral_vertex_array(verts=verts, x_cnt=x_cnt, y_cnt=y_cnt)
+vert_arr = utils.make_quadrilateral_vertex_array(verts=verts, x_cnt=x_cnt)
 
 quads,status=mesh.createEntArr(iMesh.Topology.quadrilateral,vert_arr)
 nquads=len(quads)
@@ -90,8 +96,11 @@ for t in range(ntimes):
 t_verts=mesh.createVtx(tcoords)
 
 tline_verts=[]
-for t in range(len(t_verts)-1):
-    tline_verts+=[t_verts[t],t_verts[t+1]]
+if len(t_verts) == 1:
+    tline_verts=[t_verts[0],t_verts[0]]
+else:
+    for t in range(len(t_verts)-1):
+        tline_verts+=[t_verts[t],t_verts[t+1]]
 
 tline,status=mesh.createEntArr(iMesh.Topology.line_segment,tline_verts)
 

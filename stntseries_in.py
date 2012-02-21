@@ -74,8 +74,11 @@ for t in range(ntimes):
 t_verts=mesh.createVtx(tcoords)
 
 tline_verts=[]
-for t in range(len(t_verts)-1):
-    tline_verts+=[t_verts[t],t_verts[t+1]]
+if len(t_verts) == 1:
+    tline_verts=[t_verts[0],t_verts[0]]
+else:
+    for t in range(len(t_verts)-1):
+        tline_verts+=[t_verts[t],t_verts[t+1]]
 
 tline,status=mesh.createEntArr(iMesh.Topology.line_segment,tline_verts)
 
