@@ -13,7 +13,7 @@ args=parser.parse_args()
 var_map={}
 if True:
     var_map['coords']={'t_var':'time','x_var':'lon','y_var':'lat','z_var':'z'}
-    var_map['data']=['water_height','water_temperature','streamflow']
+    var_map['data']=['water_height','data_qualifier','water_temperature','streamflow','water_height_datum']
     in_path='test_data/usgs.nc'
     out_path='test_data/usgs.h5m'
 else:
@@ -47,20 +47,14 @@ if z_cnt > 0:
 
 coord = [x_coords[0],y_coords[0],z_crd]
 
-#stn_loc=mesh.createVtx([0,0,0]) # Geocoordinate stored in a field
-stn_loc=mesh.createVtx(coord) # Geocoordinates stored in mesh
-ntopo=1
+stn_loc=mesh.createVtx([0,0,0])
 
-# Create the Topology set
-topo_set=mesh.createEntSet(False)
-topo_set.add(stn_loc)
-
-### Create Geocoordinate tag -- When Geocoordinates are stored in a field
-#geo_tag=mesh.createTag('GEOCOORDINATES',3,numpy.float)
-#geo_tag[stn_loc]=coord
+## Create Geocoordinate tag
+geo_tag=mesh.createTag('GEOCOORDINATES',3,numpy.float)
+geo_tag[stn_loc]=coord
 
 ## Create tags for each data_variable
-utils.make_data_tags(mesh, ds, var_map['data'], ntopo)
+utils.make_data_tags(mesh, ds, var_map['data'], 1)
 
 ## Add variable attribute tags
 utils.make_var_attr_tags(mesh, ds)
@@ -68,11 +62,10 @@ utils.make_var_attr_tags(mesh, ds)
 ## Add global attribute tags
 utils.make_gbl_attr_tags(mesh, ds)
 
-# Build the time information
 tvarn=coords_map['t_var']
 tvar=ds.variables[tvarn]
 ntimes=tvar.size
-
+time_tag=mesh.createTag('TIME_DATA',1,iMesh.EntitySet)
 tarr=tvar[:]
 tcoords=[]
 for t in range(ntimes):
@@ -88,28 +81,22 @@ else:
         tline_verts+=[t_verts[t],t_verts[t+1]]
 
 tline,status=mesh.createEntArr(iMesh.Topology.line_segment,tline_verts)
-time_topo_set=mesh.createEntSet(False)
-time_topo_set.add(tline)
 
-# Create a time_topology tag
-ttopo_tag=mesh.createTag('TIMESTEP_TOPO',1,iMesh.EntitySet)
+## Note:  ITAPS entity sets can be either ordered or unordered.
+## Ordered sets, as the name implies, store their contents in sorted order and do not store duplicates.
+## Unordered sets store their contents in the order they were added and do store duplicates.
 
-# Create a time_set to contain the topo and data sets
+# Create a time_set to add child timesteps into
 time_set=mesh.createEntSet(ordered=False)
 
-# Create a time_tag to reference the temporal information
-time_tag=mesh.createTag('TIME_DATA',1,iMesh.EntitySet)
-time_tag[mesh.rootSet] = time_topo_set
+# Add the time_set to the TIME_DATA tag
+time_tag[mesh.rootSet]=time_set
 
-# Process each timestep
 for ti in range(ntimes):
-    # Get the vertex for this timestep
-    tsvert=t_verts[ti]
+    set=mesh.createEntSet(ordered=False)
 
-    # Reference the topology for this timestep
-    ttopo_tag[tsvert]=topo_set
+    set.add(stn_loc)
 
-    # Process each variable
     for varn in var_map['data']:
         var=ds.variables[varn]
         try:
@@ -120,11 +107,12 @@ for ti in range(ntimes):
 
         var.set_auto_maskandscale(False)
 
-        arr=var[ti].reshape(ntopo)
+        arr=var[ti].reshape(1)
 
-        utils.set_packed_data(tag, tsvert, arr)
-#        tag[tsvert]=arr
+        utils.set_packed_data(tag, set, arr)
+#        tag[set]=arr
 
+    time_set.addChild(set)
 
 mesh.save(out_path)
 print "Saved to %s" % out_path

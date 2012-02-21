@@ -26,13 +26,16 @@ else:
 mesh=iMesh.Mesh()
 mesh.load(in_path)
 
+#ent_sets=mesh.getEntSets()
+#for es in ent_sets:
+#    report_entset_contents(es)
+
 t_tag=mesh.getTagHandle('TIME_DATA')
-t_topo_tag=mesh.getTagHandle('TIMESTEP_TOPO')
 # iBase.EntitySet returned from the tag must be 'reinitialized' as an iMesh.EntitySet
-time_topo_set=iMesh.EntitySet(t_tag[mesh.rootSet],mesh)
+t_set=iMesh.EntitySet(t_tag[mesh.rootSet],mesh)
 
 #t_set=mesh.getEntSets()[0]
-utils.report_entset_contents(mesh, time_topo_set)
+utils.report_entset_contents(mesh, t_set)
 
 # Get global and variable attributes
 var_atts={}
@@ -56,10 +59,12 @@ for t in tags:
 print "Global Attributes: %s" % gbl_atts
 print "\nVariable Attributes: %s" % var_atts
 
+ntimes=t_set.getNumChildren()
+if ntimes == 0:
+    raise Exception("No Children in temporal EntitySet %s" % t_set)
+
 print "\nGeometric Dimension: %s" % mesh.geometricDimension
 
-tlines=time_topo_set.getEntities(topo=iMesh.Topology.line_segment)
-ntimes=len(tlines)+1 # always one more timestep (vertex) than the number of line_segments
 print "\n# Times: %s" % ntimes
 
 if args.do_plot:
@@ -68,33 +73,43 @@ if args.do_plot:
 
     print "Plot time indices: %s" % args.time_indices
 
+    ts_sets=t_set.getChildren()
+
+    ## Save the figures off to a pdf file
+    #from matplotlib.backends.backend_pdf import PdfPages
+    #pdfp=PdfPages(in_path.replace('.h5m','.pdf'))
     for i in args.time_indices:
         if i >= ntimes:
             print "Cannot Plot: Index %s is outside the bounds of the time array (max is %s)" % (i, ntimes-1)
             continue
         print "Plotting data for time index %s" % i
         try:
-            tsvert=mesh.getEntAdj(tlines[i], iBase.Type.vertex)[0]
-        except IndexError:
-            tsvert=mesh.getEntAdj(tlines[i-1], iBase.Type.vertex)[0]
+            set=ts_sets[i]
+        except:
+            set = None
+
+        if set is None:
+            raise Exception("The EntitySet %s does not contain quadrilaterals, cannot process" % ts_sets[i])
 
         fig=figure()
 #        fig.suptitle="Timestep %s" % (i+1)
         from matplotlib import cm
         from matplotlib.collections import PolyCollection
 
-        topo_set=iMesh.EntitySet(t_topo_tag[tsvert],mesh)
-        quads=topo_set.getEntities(topo=iMesh.Topology.quadrilateral)
+        # We know this is a rectilinear grid, which means we know there are quadrilateral entities,
+        # so get them, get the data tags associated with them, and then loop through them to plot the data
+        #quads=mesh.getEntities(topo=iMesh.Topology.quadrilateral)
+
+        quads=set.getEntities(topo=iMesh.Topology.quadrilateral)
 
         # Find all the data tags
-        dtags=mesh.getAllTags(tsvert)
-        dtags=[dt for dt in dtags if dt.name.startswith('DATA')]
+        dtags=mesh.getAllTags(set)
         ntags=len(dtags)
         nrow=2
         ncol=int(ntags/nrow)+1
-        i=1
-        for dt in dtags:
-            dtc, varname=utils.unpack_data_tag_name(dt.name)
+        for i in range(ntags):
+            data_t=dtags[i]
+            dtc, varname=utils.unpack_data_tag_name(data_t.name)
             print "  > Plotting data for %s" % varname
             # Get the units, _FillValue, scale_factor, and add_offset
             fill_val=numpy.nan
@@ -111,7 +126,8 @@ if args.do_plot:
                 if 'units' in var_atts[varname]:
                     units=var_atts[varname]['units']
 
-            data=utils.get_packed_data(dt, tsvert, dtc)
+            data=utils.get_packed_data(data_t, set, dtc)
+#            data=data_t[set]
 
             data=numpy.ma.masked_equal(data,fill_val,copy=False)
             # apply the scale_factor
@@ -131,12 +147,54 @@ if args.do_plot:
             pcoll.set_array(data)
             pcoll.set_cmap(cm.jet)
 
-            a=fig.add_subplot(ncol,nrow,i)
+            a=fig.add_subplot(ncol,nrow,i+1)
             a.add_collection(pcoll, autolim=True)
             a.autoscale_view()
             colorbar(pcoll,orientation='vertical')
             title("%s (%s)" % (varname,units))
 
-            i+=1
+    #    fig.savefig(pdfp, format='pdf')
 
     show(0)
+
+#pdfp.close()
+#
+## Open the resultant pdf
+#import os
+#os.system('open %s' % in_path.replace('.h5m','.pdf'))
+
+#print "# of EntitySets at rootSet: %s" % len(ent_sets)
+#
+#tags=[]
+#i=0
+#for es in ent_sets:
+#    etags=mesh.getAllTags(es)
+#    print "# of tags for EntitySet %i: %s" % (i, len(etags))
+#    if len(etags) != 0:
+#        tags.append(etags)
+#    i+=1
+#
+#print "Total # of EntitySet Tags: %s" % len(tags)
+
+
+#quads=mesh.getEntities(topo=iMesh.Topology.quadrilateral)
+#print "NumOfQuads: %s" % len(quads)
+
+#quad_vert_list=mesh.getEntAdj(quads, iBase.Type.vertex)
+#quad_coords=numpy.empty((len(quads),4,3))
+#i=0
+#for qv in quad_vert_list:
+#    quad_coords[i,:,:]=mesh.getVtxCoords(qv)
+#    i+=1
+
+#tag=mesh.getTagHandle('DATA_water_temp')
+#data=tag[quads]
+
+#subplot(2,1,1)
+#for coords in quad_coords:
+#    cp=coords.copy()
+#    cp.resize(5,3)
+#    cp[4,:]=cp[0,:]
+#    plot(cp[:,0],cp[:,1],hold=True)
+#
+#title('quadrilateral bounds')

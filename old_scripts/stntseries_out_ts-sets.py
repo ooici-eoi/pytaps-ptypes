@@ -21,12 +21,16 @@ else:
 mesh=iMesh.Mesh()
 mesh.load(in_path)
 
-t_tag=mesh.getTagHandle('TIME_DATA')
-t_topo_tag=mesh.getTagHandle('TIMESTEP_TOPO')
-# iBase.EntitySet returned from the tag must be 'reinitialized' as an iMesh.EntitySet
-time_topo_set=iMesh.EntitySet(t_tag[mesh.rootSet],mesh)
+#ent_sets=mesh.getEntSets()
+#for es in ent_sets:
+#    report_entset_contents(es)
 
-utils.report_entset_contents(mesh, time_topo_set)
+t_tag=mesh.getTagHandle('TIME_DATA')
+# iBase.EntitySet returned from the tag must be 'reinitialized' as an iMesh.EntitySet
+t_set=iMesh.EntitySet(t_tag[mesh.rootSet],mesh)
+
+#t_set=mesh.getEntSets()[0]
+utils.report_entset_contents(mesh, t_set)
 
 # Get global and variable attributes
 var_atts={}
@@ -50,52 +54,41 @@ for t in tags:
 print "Global Attributes: %s" % gbl_atts
 print "\nVariable Attributes: %s" % var_atts
 
+ntimes=t_set.getNumChildren()
+if ntimes == 0:
+    raise Exception("No Children in temporal EntitySet %s" % t_set)
+
 print "\nGeometric Dimension: %s" % mesh.geometricDimension
 
-tlines=time_topo_set.getEntities(topo=iMesh.Topology.line_segment)
-ntimes=len(tlines)+1 # always one more timestep (vertex) than the number of line_segments
 print "\n# Times: %s" % ntimes
+
+tarr=range(ntimes)
 
 if args.do_plot:
 
     # This is a timeseries - as such, we need to compile the data for each variable across all the times
     data_map={}
 
-    ## !!!!! TWO METHODS FOR EXTRACTING DATA !!!!!
-    use_method_one=False
+    ts_sets=t_set.getChildren()
 
-    if use_method_one:
-        ## Method one extracts data one ts at a time and builds the complete timeseries for each variable piecemeal
-        # This method is slower but robust if data variables are added/removed during the timeseries
-        # NOTE: does not yet deal with gaps in the timeseries
-        for i in range(ntimes):
-            try:
-                tsvert=mesh.getEntAdj(tlines[i], iBase.Type.vertex)[0]
-            except IndexError:
-                tsvert=mesh.getEntAdj(tlines[i-1], iBase.Type.vertex)[0]
+    for i in range(ntimes):
+        try:
+            stn_set = ts_sets[i]
+        except:
+            stn_set = None
 
-            dtags=mesh.getAllTags(tsvert)
-            for dt in (dt for dt in dtags if dt.name.startswith('DATA')):
-                dtc,_=utils.unpack_data_tag_name(dt.name)
-                data=utils.get_packed_data(dt, tsvert, dtc)
+        if stn_set is None:
+            raise Exception("The EntitySet %s does not contain a point, cannot process" % ts_sets[i])
 
-                if not dt.name in data_map:
-                    data_map[dt.name] = data
-                else:
-                    data_map[dt.name] = numpy.vstack([data_map[dt.name],data])
-    else:
-        ## Method two extracts the entire timeseries for each variable
-        # This method is faster but only works if data exists for all vertices
-
-        # Extract the temporal vertex array from the time_topology (tlines)
-        tsverts=[x[0] for x in mesh.getEntAdj(tlines,iBase.Type.vertex)]
-        tsverts.append(mesh.getEntAdj(tlines[len(tlines)-1],iBase.Type.vertex)[1])
-        dtags=mesh.getAllTags(tsverts[0]) # This assumes that all data_tags are present on the first vertex
-        for dt in (dt for dt in dtags if dt.name.startswith('DATA')):
+        dtags=mesh.getAllTags(stn_set)
+        for dt in dtags:
             dtc,_=utils.unpack_data_tag_name(dt.name)
-            data=utils.get_packed_data(dt, tsverts, dtc)
-            data_map[dt.name] = data
+            data=utils.get_packed_data(dt, stn_set, dtc)
 
+            if not dt.name in data_map:
+                data_map[dt.name] = data
+            else:
+                data_map[dt.name] = numpy.vstack([data_map[dt.name],data])
 
     nvars=len(data_map)
     nrow=2
@@ -135,6 +128,7 @@ if args.do_plot:
         a=fig.add_subplot(ncol,nrow,i)
         plot(data)
         title("%s (%s)" % (varname,units))
+
 
         i+=1
 

@@ -57,26 +57,26 @@ for y in range(y_cnt):
 del icoords
 
 # Create the vertices
-#verts=mesh.createVtx(utils.make_coords(x_cnt, y_cnt, z)) # Geocoordinate stored in a field
-verts=mesh.createVtx(coords) # Geocoordinates stored in mesh
+verts=mesh.createVtx(utils.make_coords(x_cnt, y_cnt, z))
+nverts=len(verts)
+# Add the vertices as an EntitySet that is ordered and doesn't contain duplicates
+#  Unnecessary and only complicates structure
+#    vert_set=mesh.createEntSet(ordered=True)
+#    vert_set.add(verts)
 
 # Create quadrilateral entities
 # Build the appropriate vertex-array from the vertices
 vert_arr = utils.make_quadrilateral_vertex_array(verts=verts, x_cnt=x_cnt)
 
 quads,status=mesh.createEntArr(iMesh.Topology.quadrilateral,vert_arr)
-ntopo=len(quads)
+nquads=len(quads)
 
-# Create the Topology set
-topo_set=mesh.createEntSet(False)
-topo_set.add(quads)
-
-### Create Geocoordinate tag -- When Geocoordinates are stored in a field
-#geo_tag=mesh.createTag('GEOCOORDINATES',3,numpy.float)
-#geo_tag[verts]=coords
+## Create Geocoordinate tag
+geo_tag=mesh.createTag('GEOCOORDINATES',3,numpy.float)
+geo_tag[verts]=coords
 
 ## Create tags for each data_variable
-utils.make_data_tags(mesh, ds, var_map['data'], ntopo)
+utils.make_data_tags(mesh, ds, var_map['data'], nquads)
 
 ## Add variable attribute tags
 utils.make_var_attr_tags(mesh, ds)
@@ -87,7 +87,7 @@ utils.make_gbl_attr_tags(mesh, ds)
 tvarn=coords_map['t_var']
 tvar=ds.variables[tvarn]
 ntimes=tvar.size
-
+time_tag=mesh.createTag('TIME_DATA',1,iMesh.EntitySet)
 tarr=tvar[:]
 tcoords=[]
 for t in range(ntimes):
@@ -103,26 +103,21 @@ else:
         tline_verts+=[t_verts[t],t_verts[t+1]]
 
 tline,status=mesh.createEntArr(iMesh.Topology.line_segment,tline_verts)
-time_topo_set=mesh.createEntSet(False)
-time_topo_set.add(tline)
 
-# Create a time_topology tag
-ttopo_tag=mesh.createTag('TIMESTEP_TOPO',1,iBase.EntitySet)
+## Note:  ITAPS entity sets can be either ordered or unordered.
+## Ordered sets, as the name implies, store their contents in sorted order and do not store duplicates.
+## Unordered sets store their contents in the order they were added and do store duplicates.
 
-# Create a time_set to contain the topo and data sets
+# Create a time_set to add child timesteps into
 time_set=mesh.createEntSet(ordered=False)
 
-# Create a time_tag to reference the temporal information
-time_tag=mesh.createTag('TIME_DATA',1,iMesh.EntitySet)
-time_tag[mesh.rootSet] = time_topo_set
+# Add the time_set to the TIME_DATA tag
+time_tag[mesh.rootSet]=time_set
 
-# Process each timestep
 for ti in range(ntimes):
-    # Get the vertex for this timestep
-    tsvert=t_verts[ti]
+    set=mesh.createEntSet(ordered=False)
 
-    # Reference the topology for this timestep
-    ttopo_tag[tsvert]=topo_set
+    set.add(quads)
 
     for varn in var_map['data']:
         var=ds.variables[varn]
@@ -134,12 +129,14 @@ for ti in range(ntimes):
 
         var.set_auto_maskandscale(False)
         if len(var.shape) == 4:
-            arr=var[ti,0,:,:].reshape(ntopo)
+            arr=var[ti,0,:,:].reshape(nquads)
         else:
-            arr=var[ti,:,:].reshape(ntopo)
+            arr=var[ti,:,:].reshape(nquads)
 
-        utils.set_packed_data(tag, tsvert, arr)
 #        tag[set]=arr
+        utils.set_packed_data(tag, set, arr)
+
+    time_set.addChild(set)
 
 mesh.save(out_path)
 print "Saved to %s" % out_path
