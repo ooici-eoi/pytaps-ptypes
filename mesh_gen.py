@@ -21,8 +21,9 @@ def make_2d(mesh, dims):
 
     print "--> make_quadrilateral_vertex_array"
     t0=time.time()
-    vert_arr=utils.make_quadrilateral_vertex_array(verts, x, y)
+#    vert_arr=utils.make_quadrilateral_vertex_array(verts, x, y)
 #    vert_arr=utils.make_quadrilateral_vertex_array_new(verts, x)
+    vert_arr=utils.make_quadrilateral_vertex_array_new2(verts, x)
     print "    %.1f ms" % ((time.time()-t0)*1000)
 
     print "--> createEntArr quadrilaterals"

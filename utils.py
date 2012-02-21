@@ -16,6 +16,17 @@ def print_mesh_types(mesh):
                               mesh.getNumOfType(iBase.Type.edge),
                               mesh.getNumOfType(iBase.Type.region))
 
+from itertools import *
+
+def iterblocks(iterable, size, blocktype=list):
+    iterator = iter(iterable)
+    while True:
+        block = blocktype(islice(iterator,size))
+        if not block:
+            break
+
+        yield block
+
 def make_coords(x_cnt, y_cnt, z_cnt):
     if z_cnt > 1:
         coords=[[x,y,z] for z in xrange(z_cnt) for y in xrange(y_cnt) for x in xrange(x_cnt)]
@@ -24,7 +35,17 @@ def make_coords(x_cnt, y_cnt, z_cnt):
 
     return coords
 
-def make_quadrilateral_vertex_array_new(verts, x_cnt):
+def make_quadrilateral_vertex_array(verts, x_cnt):
+    vert_arr=[]
+    for x in (x for x in xrange(len(verts)-x_cnt-1) if (x+1) % x_cnt != 0):
+        vert_arr.append(verts[x])
+        vert_arr.append(verts[x+1])
+        vert_arr.append(verts[x+1+x_cnt])
+        vert_arr.append(verts[x+x_cnt])
+
+    return vert_arr
+
+def make_quadrilateral_vertex_array_extend(verts, x_cnt):
     vert_arr=[]
     for x in (x for x in xrange(len(verts)-x_cnt-1) if (x+1) % x_cnt != 0):
         vert_arr.extend(verts[x:x+2])
@@ -32,7 +53,7 @@ def make_quadrilateral_vertex_array_new(verts, x_cnt):
 
     return vert_arr
 
-def make_quadrilateral_vertex_array(verts, x_cnt, y_cnt):
+def make_quadrilateral_vertex_array_old(verts, x_cnt, y_cnt):
     vert_arr=[]
     for y in range(y_cnt-1):
         for x in range(x_cnt-1):
@@ -51,7 +72,27 @@ def make_quadrilateral_vertex_array(verts, x_cnt, y_cnt):
 
     return vert_arr
 
-def make_hexahedron_vertex_array_new(verts, x_cnt, y_cnt, z_cnt):
+def make_hexahedron_vertex_array(verts, x_cnt, y_cnt, z_cnt):
+    vert_arr=[]
+    zii=0
+    for z in range(z_cnt-1):
+        zi=(x_cnt*y_cnt)*(z+1)
+        for x in (x for x in xrange((len(verts)/z_cnt)-x_cnt-1) if (x+1) % x_cnt != 0):
+            vert_arr.append(verts[x+zii])
+            vert_arr.append(verts[x+1+zii])
+            vert_arr.append(verts[x+1+x_cnt+zii])
+            vert_arr.append(verts[x+x_cnt+zii])
+
+            vert_arr.append(verts[x+zi])
+            vert_arr.append(verts[x+1+zi])
+            vert_arr.append(verts[x+1+x_cnt+zi])
+            vert_arr.append(verts[x+x_cnt+zi])
+
+        zii=zi
+
+    return vert_arr
+
+def make_hexahedron_vertex_array_extend(verts, x_cnt, y_cnt, z_cnt):
     vert_arr=[]
     zii=0
     for z in range(z_cnt-1):
@@ -66,7 +107,7 @@ def make_hexahedron_vertex_array_new(verts, x_cnt, y_cnt, z_cnt):
 
     return vert_arr
 
-def make_hexahedron_vertex_array(verts, x_cnt, y_cnt, z_cnt):
+def make_hexahedron_vertex_array_old(verts, x_cnt, y_cnt, z_cnt):
     vert_arr=[]
     zii=0
     for z in range(z_cnt-1):
