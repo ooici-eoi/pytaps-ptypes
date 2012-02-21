@@ -1,10 +1,10 @@
 netcdf hfr {
 dimensions:
-	time = 1 ;
+	time = 2 ;
 	lat = 460 ;
 	lon = 701 ;
 	nProcParam = 7 ;
-	nSites = 15 ;
+	nSites = 14 ;
 	nSites_maxStrlen = 25 ;
 variables:
 	short DOPx(time, lat, lon) ;
@@ -88,9 +88,9 @@ variables:
 		:title = "Near-Real Time Surface Ocean Velocity" ;
 		:institution = "Scripps Institution of Oceanography" ;
 		:source = "Surface Ocean HF-Radar" ;
-		:history = "Wed Dec  7 12:39:48 2011: ncks -d time,8174,8174 http://hfrnet.ucsd.edu:8080/thredds/dodsC/HFRNet/USEGC/6km/hourly/RTV hfr.nc\n",
-			"07-Dec-2011 17:36:07:  Filtered U and V by GDOP < 1.25\n",
-			"07-Dec-2011 17:36:07:  NetCDF file created" ;
+		:history = "Tue Feb 21 15:01:05 2012: ncks -d time,0,1 http://hfrnet.ucsd.edu:8080/thredds/dodsC/HFRNet/USEGC/6km/hourly/RTV hfr2.nc\n",
+			"21-Feb-2012 19:35:45:  Filtered U and V by GDOP < 1.25\n",
+			"21-Feb-2012 19:35:45:  NetCDF file created" ;
 		:references = "Terrill, E. et al., 2006. Data Management and Real-time\n",
 			"Distribution in the HF-Radar National Network. Proceedings\n",
 			"of the MTS/IEEE Oceans 2006 Conference, Boston MA,\n",
