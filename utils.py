@@ -53,7 +53,7 @@ def make_quadrilateral_vertex_array_extend(verts, x_cnt):
 
     return vert_arr
 
-def make_quadrilateral_vertex_array_old(verts, x_cnt, y_cnt):
+def make_quadrilateral_vertex_array_orig(verts, x_cnt, y_cnt):
     vert_arr=[]
     for y in range(y_cnt-1):
         for x in range(x_cnt-1):
@@ -107,7 +107,7 @@ def make_hexahedron_vertex_array_extend(verts, x_cnt, y_cnt, z_cnt):
 
     return vert_arr
 
-def make_hexahedron_vertex_array_old(verts, x_cnt, y_cnt, z_cnt):
+def make_hexahedron_vertex_array_orig(verts, x_cnt, y_cnt, z_cnt):
     vert_arr=[]
     zii=0
     for z in range(z_cnt-1):
