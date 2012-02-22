@@ -127,12 +127,12 @@ for ti in range(ntimes):
 
         var.set_auto_maskandscale(False)
         if len(var.shape) == 4:
-            arr=var[ti,0,:,:].reshape(ntopo)
+            arr=var[ti,:,:,:].reshape(ntopo*var.shape[1])
         else:
             arr=var[ti,:,:].reshape(ntopo)
 
         utils.set_packed_data(tag, tsvert, arr)
-#        tag[set]=arr
+#        tag[tsvert]=arr
 
 mesh.save(out_path)
 print "Saved to %s" % out_path

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from itaps import iBase, iMesh, iGeom
-from netCDF4 import Dataset
+from matplotlib import cm
 import numpy
 from pylab import *
 import utils
@@ -22,6 +22,7 @@ elif args.is_hfr:
     in_path = 'test_data/v_hfr.h5m'
 else:
     in_path = 'test_data/v_ncom.h5m'
+    md_shp=[34,57,89]
 
 mesh=iMesh.Mesh()
 mesh.load(in_path)
@@ -80,8 +81,6 @@ if args.do_plot:
 
         fig=figure()
 #        fig.suptitle="Timestep %s" % (i+1)
-        from matplotlib import cm
-        from matplotlib.collections import PolyCollection
 
         topo_set=iMesh.EntitySet(t_topo_tag[tsvert],mesh)
         verts=topo_set.getEntities(type=iBase.Type.vertex)
@@ -115,6 +114,8 @@ if args.do_plot:
                     units=var_atts[varname]['units']
 
             data=utils.get_packed_data(dt, tsvert, dtc)
+            if data.size > len(verts): # has levels
+                data=data.reshape(md_shp)[33,:,:].reshape(md_shp[1]*md_shp[2])
 
             data=numpy.ma.masked_equal(data,fill_val,copy=False)
             # apply the scale_factor

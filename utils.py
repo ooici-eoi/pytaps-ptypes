@@ -241,8 +241,15 @@ def make_data_tags(mesh, ds, data_vars, data_dim):
     for varn in data_vars:
         var=ds.variables[varn]
         dt=var.dtype
-        ## By using the packing methods above, all tags can be made as the byte type
-        mesh.createTag(pack_data_tag_name(varn, dt.char), (data_dim*dt.itemsize), np.byte)
+
+        dpth=1
+        shp=var.shape
+        if len(shp) is 4:
+            dsize=data_dim*shp[1]*dt.itemsize
+        else:
+            dsize=data_dim*dt.itemsize
+            ## By using the packing methods above, all tags can be made as the byte type
+        mesh.createTag(pack_data_tag_name(varn, dt.char), dsize, np.byte)
 
 def make_var_attr_tags(mesh, ds):
     for varn in ds.variables:

@@ -74,6 +74,9 @@ if args.do_plot:
             except IndexError:
                 tsvert=mesh.getEntAdj(tlines[i-1], iBase.Type.vertex)[0]
 
+            topo_set=iMesh.EntitySet(t_topo_tag[tsvert],mesh)
+            verts=topo_set.getEntities(type=iBase.Type.vertex)
+
             dtags=mesh.getAllTags(tsvert)
             for dt in (dt for dt in dtags if dt.name.startswith('DATA')):
                 dtc,_=utils.unpack_data_tag_name(dt.name)
