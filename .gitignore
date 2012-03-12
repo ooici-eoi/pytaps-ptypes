@@ -12,5 +12,7 @@
 
 .DS_Store
 erl_crash.dump
-test_data/*.h5m
 *.h5m
+*.vtk
+*/*.h5m
+*/*.vtk
