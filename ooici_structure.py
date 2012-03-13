@@ -189,19 +189,7 @@ class ParameterIndexing(object):
 
 class Structure(object):
     def __init__(self, mesh=None, grid_dimensions=None):
-        if grid_dimensions is None: #TODO: Temporary, replace with grid_dimensions or 'default' statement
-#                x=3
-#                y=3
-#                z=3
-#                if z is 1:
-#                    zp=1
-#                else:
-#                    zp=z-1
-#
-#                grid_dimensions=((x,y,z),(0,),(x-1,y-1,zp),(x-1,y-1,zp))
-#            else:
-#                grid_dimensions=grid_dimensions
-#
+        if grid_dimensions is None:
 #            grid_dimensions=((3,1,1),(0,),(0,),(0,))
 #            grid_dimensions=((3,3,1),(0,),(2,2,1),(0,))
 #            grid_dimensions=((4,4,1),(0,),(3,3,1),(0,))
@@ -213,10 +201,11 @@ class Structure(object):
 #            grid_dimensions=((3,3,3),(0,),(0,),(2,2,2))
 #            grid_dimensions=((3,3,4),(0,),(0,),(2,2,3))
 #            grid_dimensions=((3,4,4),(0,),(0,),(2,3,3))
-            if len(grid_dimensions[0]) is 3:
-                z=grid_dimensions[0][2]
-            else:
-                z=1
+
+        if len(grid_dimensions[0]) is 3:
+            z=grid_dimensions[0][2]
+        else:
+            z=1
 
         self.gshp = grid_dimensions
         if mesh is None:
