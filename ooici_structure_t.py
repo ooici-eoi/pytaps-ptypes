@@ -50,25 +50,41 @@ class Parameter(object):
         self._pstruct=parent_structure
         self._tag_hndl=tag_handle
         self._ent_hndls=entity_handles
-        self._vent_hndls=vertex_entity_handles
+#        self._vent_hndls=vertex_entity_handles
+        self._index_keys=[]
 
         # Break apart the tag to it's component info
         self.cell_dim, self.data_type, self.name = unpack_data_tag_name(self._tag_hndl.name)
+        self.cell_dim=int(self.cell_dim)
 
-        cdim_shp=(len(self._ent_hndls),)
-        if not isinstance(temporal_shape, tuple): temporal_shape = (temporal_shape,)
-        grid_shape=grid_shape or (0,)
-        if not isinstance(grid_shape, tuple): grid_shape = (grid_shape,)
+        self._init_indexing()
 
-        self.ni = ParameterIndexing(self, shape=temporal_shape+cdim_shp) # Natural indexing
-        self.gi = ParameterIndexing(self, shape=temporal_shape+grid_shape) # Non-natural (grid) indexing
+    def _init_indexing(self):
+        # First remove any indexing attributes currently present
+        for k in self._index_keys:
+            delattr(k)
+        self._index_keys=[]
 
-        self.ncoords = CoordinateIndexing(self, shape=temporal_shape+cdim_shp)
-        self.gcoords = CoordinateIndexing(self, shape=temporal_shape+grid_shape)
+        # Get the current set of indexings, make an attribute for each and add the name to self._index_keys
+        cell_indexings=self._pstruct.indexing[self.cell_dim]
+        for key in cell_indexings:
+            ik='i{0}'.format(key)
+            ck='i{0}_CDS'.format(key)
+            setattr(self, ik, ParameterIndexing(self, cell_indexings[key]))
+            setattr(self, ck, CoordinateIndexing(self, cell_indexings[key]))
+            self._index_keys.append(ik)
+            self._index_keys.append(ck)
+
+    def reinitialize(self):
+        self._init_indexing()
 
     @property
     def shape(self):
-        return 'Natural Indexing: %s, Grid Indexing: %s' % (self.ni.shape, self.gi.shape)
+        s=''
+        for k in self._index_keys:
+            s+='{0} | {1}; '.format(k, getattr(self, k).shape)
+
+        return s
 
 class CoordinateIndexing(object):
     def __init__(self, parent_parameter, shape):
@@ -143,7 +159,6 @@ class CoordinateIndexing(object):
 
     def __repr__(self):
         return 'shape: %s' % (self.shape,)
-
 
 class ParameterIndexing(object):
     def __init__(self, parent_parameter, shape):
@@ -221,32 +236,41 @@ class Structure(object):
         print 'mesh: %s' % self.mesh
 
         # Get Time Tags
-        t_tag=mesh.getTagHandle('TIME_DATA')
+        t_tag=mesh.getTagHandle('TEMPORAL_0')
         time_topo_set=iMesh.EntitySet(t_tag[mesh.rootSet], mesh)
         self._t_verts=time_topo_set.getEntities(type=0)
         print 'num_times: %s' % len(self._t_verts)
         self.tshp=(len(self._t_verts),)
-        ttopo_tag=mesh.getTagHandle('TIMESTEP_TOPO')
-        ttopo_set=iMesh.EntitySet(ttopo_tag[time_topo_set], mesh)
+#        ttopo_tag=mesh.getTagHandle('SPATIAL_2')
+#        ttopo_set=iMesh.EntitySet(ttopo_tag[time_topo_set], mesh)
 
         self.parameters=OrderedDict()
+        self.indexing=[]
         for i in xrange(4):
-            ents=ttopo_set.getEntities(type=i)
+            try:
+                tag=mesh.getTagHandle('SPATIAL_{0}'.format(i))
+            except iBase.TagNotFoundError:
+                self.indexing.append({})
+                continue
+            entset=iMesh.EntitySet(tag[mesh.rootSet], mesh)
+            ents=entset.getEntities(type=i)
             print '#_ents in cell_dim %s: %s' % (i, len(ents))
+            self.indexing.append({'NATURAL':(self.tshp+(len(ents),)),
+                                  'GRID':(self.tshp+self.gshp[i])})
             if len(ents) > 0:
                 # TODO: ASSUMES ALL TAGS ARE ON ALL ENTITIES
                 tags=self.mesh.getAllTags(self._t_verts[0])
 #                print 'all_tags: %s' % tags
                 dtags=[dt for dt in tags if dt.name.startswith('DATA_%s' % i)]
 #                print 'data_tags: %s' % dtags
-                vents=ttopo_set.getEntities(type=0)
+#                vents=ttopo_set.getEntities(type=0)
 #                if i is 0:
 #                    vents=ents.copy()
 #                else:
 #                    vents=ttopo_set.getEntAdj(ents, type=0)
                 for tag in dtags:
-                    p=Parameter(self, tag, ents, vents, self.tshp, self.gshp[i])
-                    print '\t%s\t%s\t%s:%s' % (tag.name, p.name, len(ents), len(vents))
+                    p=Parameter(self, tag, ents, None, self.tshp, self.gshp[i])
+                    print '\t%s\t%s\t%s' % (tag.name, p.name, len(ents))
                     self.parameters[p.name] = p
 
 

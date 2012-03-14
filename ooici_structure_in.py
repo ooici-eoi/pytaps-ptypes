@@ -74,22 +74,33 @@ coords=[[x_coords[x],y_coords[y],z] for y in xrange(y_cnt) for x in xrange(x_cnt
 # Create the vertices
 #verts=mesh.createVtx(utils.make_coords(x_cnt, y_cnt, z)) # Geocoordinate stored in a field
 verts=mesh.createVtx(coords) # Geocoordinates stored in mesh
+verts_set=mesh.createEntSet(False)
+verts_set.add(verts)
+verts_tag=mesh.createTag('SPATIAL_0', 1, iMesh.EntitySet)
+verts_tag[mesh.rootSet]=verts_set
 
 # Create quadrilateral entities
 # Build the appropriate vertex-array from the vertices
 vert_arr = utils.make_quadrilateral_vertex_array(verts=verts, x_cnt=x_cnt)
 
+
 quads,status=mesh.createEntArr(iMesh.Topology.quadrilateral,vert_arr)
-ntopo=len(quads)
 
 # Create the Topology set
-topo_set=mesh.createEntSet(False)
-topo_set.add(quads)
-for edges in mesh.getEntAdj(quads,type=1):
-    topo_set.add(edges)
-topo_set.add(verts)
-#topo_set.add(mesh.getEntAdj(quads,type=1))
-#topo_set.add(mesh.getEntAdj(quads,type=0))
+face_set=mesh.createEntSet(False)
+face_set.add(quads)
+faces_tag=mesh.createTag('SPATIAL_2', 1, iMesh.EntitySet)
+faces_tag[mesh.rootSet]=face_set
+ntopo=len(quads)
+
+edges_set=mesh.createEntSet(False)
+for e in mesh.getEntAdj(quads, type=1):
+    edges_set.add(e)
+edges_tag=mesh.createTag('SPATIAL_2_1', 1, iMesh.EntitySet)
+edges_tag[mesh.rootSet]=edges_set
+
+#face_set.add(mesh.getEntAdj(quads,type=1))
+#face_set.add(mesh.getEntAdj(quads,type=0))
 
 ### Create Geocoordinate tag -- When Geocoordinates are stored in a field
 #geo_tag=mesh.createTag('GEOCOORDINATES',3,numpy.float)
@@ -124,20 +135,12 @@ else:
         tline_verts+=[t_verts[t],t_verts[t+1]]
 
 tline,status=mesh.createEntArr(iMesh.Topology.line_segment,tline_verts)
-time_topo_set=mesh.createEntSet(False)
-time_topo_set.add(tline)
-time_topo_set.add(t_verts)
-
-# Create a time_topology tag
-ttopo_tag=mesh.createTag('TIMESTEP_TOPO',1,iMesh.EntitySet)
-ttopo_tag[time_topo_set]=topo_set
-
-# Create a time_set to contain the topo and data sets
-#time_set=mesh.createEntSet(ordered=False)
+time_set=mesh.createEntSet(False)
+time_set.add(t_verts)
 
 # Create a time_tag to reference the temporal information
-time_tag=mesh.createTag('TIME_DATA',1,iMesh.EntitySet)
-time_tag[mesh.rootSet] = time_topo_set
+time_tag=mesh.createTag('TEMPORAL_0',1,iMesh.EntitySet)
+time_tag[mesh.rootSet] = time_set
 
 # Process each timestep
 for ti in xrange(ntimes):
@@ -145,7 +148,7 @@ for ti in xrange(ntimes):
     tsvert=t_verts[ti]
 
 #    # Reference the topology for this timestep
-#    ttopo_tag[tsvert]=topo_set
+#    ttopo_tag[tsvert]=face_set
 
     for varn in var_map['2_data']:
         var=ds.variables[varn]
