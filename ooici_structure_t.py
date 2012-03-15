@@ -14,7 +14,7 @@ from itaps import iMesh, iBase
 import numpy as np
 from numpy import random as rnd
 import utils
-from ordereddict import OrderedDict
+from collections import OrderedDict
 
 def make_test_mesh(x,y,z=1):
     mesh=iMesh.Mesh()
@@ -62,7 +62,7 @@ class Parameter(object):
     def _init_indexing(self):
         # First remove any indexing attributes currently present
         for k in self._index_keys:
-            delattr(k)
+            delattr(self, k)
         self._index_keys=[]
 
         # Get the current set of indexings, make an attribute for each and add the name to self._index_keys
@@ -76,6 +76,7 @@ class Parameter(object):
             self._index_keys.append(ck)
 
     def reinitialize(self):
+        print "reinitializing parameter {0}".format(self.name)
         self._init_indexing()
 
     @property
@@ -236,7 +237,7 @@ class Structure(object):
         print 'mesh: %s' % self.mesh
 
         # Get Time Tags
-        t_tag=mesh.getTagHandle('TEMPORAL_0')
+        t_tag=mesh.getTagHandle('T0')
         time_topo_set=iMesh.EntitySet(t_tag[mesh.rootSet], mesh)
         self._t_verts=time_topo_set.getEntities(type=0)
         print 'num_times: %s' % len(self._t_verts)
@@ -248,7 +249,7 @@ class Structure(object):
         self.indexing=[]
         for i in xrange(4):
             try:
-                tag=mesh.getTagHandle('SPATIAL_{0}'.format(i))
+                tag=mesh.getTagHandle('S{0}'.format(i))
             except iBase.TagNotFoundError:
                 self.indexing.append({})
                 continue
@@ -273,6 +274,9 @@ class Structure(object):
                     print '\t%s\t%s\t%s' % (tag.name, p.name, len(ents))
                     self.parameters[p.name] = p
 
+    def reinitialize(self):
+        for pk in self.parameters:
+            self.parameters[pk].reinitialize()
 
     def __repr__(self):
         return '# Parameters: %s\n' % len(self.parameters)

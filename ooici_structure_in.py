@@ -29,7 +29,7 @@ def make_data_tags(mesh, ds, data_vars, data_dim, cell_dim=0):
 
 
 
-parser = argparse.ArgumentParser(description='Read amd display an imesh structured grid representation')
+parser = argparse.ArgumentParser(description='Convert a NetCDF structured grid into the OOICI Science CDM iMesh representation')
 parser.add_argument('--c', action='store_true', dest='is_coads', help='If the coards.nc sample grid should be processed; default processes the ncom.nc sample')
 parser.add_argument('--r', action='store_true', dest='is_hfr', help='If the hfr.nc sample grid should be processed; default processes the ncom.nc sample')
 args=parser.parse_args()
@@ -38,12 +38,12 @@ args=parser.parse_args()
 var_map={}
 if args.is_coads:
     var_map['coords']={'t_var':'TIME','x_var':'COADSX','y_var':'COADSY','z_var':None}
-    var_map['data']=['SST','AIRT','SPEH','WSPD','UWND','VWND','SLP']
+    var_map['2_data']=['SST','AIRT','SPEH','WSPD','UWND','VWND','SLP']
     in_path='test_data/coads.nc'
     out_path='test_data/coads.h5m'
 elif args.is_hfr:
     var_map['coords']={'t_var':'time','x_var':'lon','y_var':'lat','z_var':None}
-    var_map['data']=['u','v','DOPy','DOPx']
+    var_map['2_data']=['u','v','DOPy','DOPx']
     in_path='test_data/hfr.nc'
     out_path='test_data/hfr.h5m'
 else:
@@ -74,10 +74,10 @@ coords=[[x_coords[x],y_coords[y],z] for y in xrange(y_cnt) for x in xrange(x_cnt
 # Create the vertices
 #verts=mesh.createVtx(utils.make_coords(x_cnt, y_cnt, z)) # Geocoordinate stored in a field
 verts=mesh.createVtx(coords) # Geocoordinates stored in mesh
-verts_set=mesh.createEntSet(False)
-verts_set.add(verts)
-verts_tag=mesh.createTag('SPATIAL_0', 1, iMesh.EntitySet)
-verts_tag[mesh.rootSet]=verts_set
+s0_set=mesh.createEntSet(False)
+s0_set.add(verts)
+s0_tag=mesh.createTag('S0', 1, iMesh.EntitySet)
+s0_tag[mesh.rootSet]=s0_set
 
 # Create quadrilateral entities
 # Build the appropriate vertex-array from the vertices
@@ -87,20 +87,25 @@ vert_arr = utils.make_quadrilateral_vertex_array(verts=verts, x_cnt=x_cnt)
 quads,status=mesh.createEntArr(iMesh.Topology.quadrilateral,vert_arr)
 
 # Create the Topology set
-face_set=mesh.createEntSet(False)
-face_set.add(quads)
-faces_tag=mesh.createTag('SPATIAL_2', 1, iMesh.EntitySet)
-faces_tag[mesh.rootSet]=face_set
+s2_set=mesh.createEntSet(False)
+s2_set.add(quads)
+s2_tag=mesh.createTag('S2', 1, iMesh.EntitySet)
+s2_tag[mesh.rootSet]=s2_set
 ntopo=len(quads)
 
-edges_set=mesh.createEntSet(False)
+s21_set=mesh.createEntSet(False)
 for e in mesh.getEntAdj(quads, type=1):
-    edges_set.add(e)
-edges_tag=mesh.createTag('SPATIAL_2_1', 1, iMesh.EntitySet)
-edges_tag[mesh.rootSet]=edges_set
+    s21_set.add(e)
+s21_tag=mesh.createTag('S21', 1, iMesh.EntitySet)
+s21_tag[mesh.rootSet]=s21_set
 
-#face_set.add(mesh.getEntAdj(quads,type=1))
-#face_set.add(mesh.getEntAdj(quads,type=0))
+s20_set=mesh.createEntSet(False)
+for e in mesh.getEntAdj(quads, type=0):
+    s20_set.add(e)
+s20_tag=mesh.createTag('S20', 1, iMesh.EntitySet)
+
+#s2_set.add(mesh.getEntAdj(quads,type=1))
+#s2_set.add(mesh.getEntAdj(quads,type=0))
 
 ### Create Geocoordinate tag -- When Geocoordinates are stored in a field
 #geo_tag=mesh.createTag('GEOCOORDINATES',3,numpy.float)
@@ -139,7 +144,7 @@ time_set=mesh.createEntSet(False)
 time_set.add(t_verts)
 
 # Create a time_tag to reference the temporal information
-time_tag=mesh.createTag('TEMPORAL_0',1,iMesh.EntitySet)
+time_tag=mesh.createTag('T0',1,iMesh.EntitySet)
 time_tag[mesh.rootSet] = time_set
 
 # Process each timestep
@@ -148,7 +153,7 @@ for ti in xrange(ntimes):
     tsvert=t_verts[ti]
 
 #    # Reference the topology for this timestep
-#    ttopo_tag[tsvert]=face_set
+#    ttopo_tag[tsvert]=s2_set
 
     for varn in var_map['2_data']:
         var=ds.variables[varn]
