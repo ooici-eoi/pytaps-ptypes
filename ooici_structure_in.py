@@ -49,6 +49,13 @@ elif args.is_hfr:
 else:
     var_map['coords']={'t_var':'time','x_var':'lon','y_var':'lat','z_var':'depth'}
     var_map['2_data']=['salinity','surf_el','water_temp','water_u','water_v']
+#    from ConfigParser import SafeConfigParser
+#    parser=SafeConfigParser()
+#    parser.read('dataset_in.config')
+#    t4=parser.get('ncom','4_topo')['axes']
+#    t2=parser.get('ncom','2_topo')['axes']
+#    var_map['coords']={'t_var':t4[0], 'x_var':t2[0]}
+
     in_path='test_data/ncom.nc'
     out_path='test_data/ncom.h5m'
 
@@ -74,7 +81,7 @@ coords=[[x_coords[x],y_coords[y],z] for y in xrange(y_cnt) for x in xrange(x_cnt
 # Create the vertices
 #verts=mesh.createVtx(utils.make_coords(x_cnt, y_cnt, z)) # Geocoordinate stored in a field
 verts=mesh.createVtx(coords) # Geocoordinates stored in mesh
-s0_set=mesh.createEntSet(False)
+s0_set=mesh.createEntSet(True)
 s0_set.add(verts)
 s0_tag=mesh.createTag('S0', 1, iMesh.EntitySet)
 s0_tag[mesh.rootSet]=s0_set
@@ -87,19 +94,19 @@ vert_arr = utils.make_quadrilateral_vertex_array(verts=verts, x_cnt=x_cnt)
 quads,status=mesh.createEntArr(iMesh.Topology.quadrilateral,vert_arr)
 
 # Create the Topology set
-s2_set=mesh.createEntSet(False)
+s2_set=mesh.createEntSet(True)
 s2_set.add(quads)
 s2_tag=mesh.createTag('S2', 1, iMesh.EntitySet)
 s2_tag[mesh.rootSet]=s2_set
 ntopo=len(quads)
 
-s21_set=mesh.createEntSet(False)
+s21_set=mesh.createEntSet(True)
 for e in mesh.getEntAdj(quads, type=1):
     s21_set.add(e)
 s21_tag=mesh.createTag('S21', 1, iMesh.EntitySet)
 s21_tag[mesh.rootSet]=s21_set
 
-s20_set=mesh.createEntSet(False)
+s20_set=mesh.createEntSet(True)
 for e in mesh.getEntAdj(quads, type=0):
     s20_set.add(e)
 s20_tag=mesh.createTag('S20', 1, iMesh.EntitySet)
@@ -113,7 +120,7 @@ s20_tag=mesh.createTag('S20', 1, iMesh.EntitySet)
 
 ## Create tags for each data_variable
 # NOTE: THIS ASSUMES ALL DATA ON FACES (true for ncom)
-make_data_tags(mesh, ds, var_map['2_data'], ntopo, 2)
+make_data_tags(mesh, ds, var_map['2_data'], ntopo, 'S2')
 
 ### Add variable attribute tags
 #utils.make_var_attr_tags(mesh, ds)
@@ -140,7 +147,7 @@ else:
         tline_verts+=[t_verts[t],t_verts[t+1]]
 
 tline,status=mesh.createEntArr(iMesh.Topology.line_segment,tline_verts)
-time_set=mesh.createEntSet(False)
+time_set=mesh.createEntSet(True)
 time_set.add(t_verts)
 
 # Create a time_tag to reference the temporal information
@@ -158,7 +165,7 @@ for ti in xrange(ntimes):
     for varn in var_map['2_data']:
         var=ds.variables[varn]
         try:
-            tag=mesh.getTagHandle(pack_data_tag_name(varn, var.dtype.char, 2))
+            tag=mesh.getTagHandle(pack_data_tag_name(varn, var.dtype.char, 'S2'))
         except Exception as ex:
             print "No tag found for variable '%s'" % varn
             continue

@@ -55,7 +55,7 @@ class Parameter(object):
 
         # Break apart the tag to it's component info
         self.cell_dim, self.data_type, self.name = unpack_data_tag_name(self._tag_hndl.name)
-        self.cell_dim=int(self.cell_dim)
+#        self.cell_dim=int(self.cell_dim)
 
         self._init_indexing()
 
@@ -210,67 +210,57 @@ class ParameterIndexing(object):
         return 'shape: %s' % (self.shape,)
 
 class Structure(object):
-    def __init__(self, mesh=None, grid_dimensions=None):
-        if grid_dimensions is None:
-#            grid_dimensions=((3,1,1),(0,),(0,),(0,))
-#            grid_dimensions=((3,3,1),(0,),(2,2,1),(0,))
-#            grid_dimensions=((4,4,1),(0,),(3,3,1),(0,))
-#            grid_dimensions=((3,3),(0,),(2,2),(0,))
-#            grid_dimensions=((4,4),(0,),(3,3),(0,))
-            grid_dimensions=((5,5),(0,),(4,4),(0,))
-#            grid_dimensions=((20,30,1),(0,),(19,29,1),(0,))
-#            grid_dimensions=((3,3,2),(0,),(0,),(2,2,1))
-#            grid_dimensions=((3,3,3),(0,),(0,),(2,2,2))
-#            grid_dimensions=((3,3,4),(0,),(0,),(2,2,3))
-#            grid_dimensions=((3,4,4),(0,),(0,),(2,3,3))
-
-        if len(grid_dimensions[0]) is 3:
-            z=grid_dimensions[0][2]
+    def __init__(self, mesh_in, index_key):
+        if isinstance(mesh_in, str or unicode):
+            try:
+                self.mesh=iMesh.Mesh()
+                self.mesh.load(mesh_in)
+            except Exception as ex:
+                raise ex
+        elif isinstance(mesh_in, iMesh.Mesh):
+            self.mesh=mesh_in
         else:
-            z=1
+            raise TypeError('mesh_in is of unknown type: {0}'.format(type(mesh_in)))
 
-        self.gshp = grid_dimensions
-        if mesh is None:
-            mesh = make_test_mesh(self.gshp[0][0], self.gshp[0][1], z)
-
-        self.mesh = mesh
         print 'mesh: %s' % self.mesh
 
+        if isinstance(index_key, str or unicode):
+            from ConfigParser import SafeConfigParser
+            parser=SafeConfigParser()
+            parser.read('dataset_out.config')
+            hindexing=eval(parser.get(index_key, 'base_indexing'))
+            if not isinstance(hindexing, tuple):
+                raise TypeError('type of option {0} in dataset_out.config[base_indexing] is invalid: {1}'.format(index_key, type(hindexing)))
+        else:
+            raise TypeError('index_key is of unsupported type: {0}'.format(type(index_key)))
+
         # Get Time Tags
-        t_tag=mesh.getTagHandle('T0')
-        time_topo_set=iMesh.EntitySet(t_tag[mesh.rootSet], mesh)
+        t_tag=self.mesh.getTagHandle('T0')
+        time_topo_set=iMesh.EntitySet(t_tag[self.mesh.rootSet], self.mesh)
         self._t_verts=time_topo_set.getEntities(type=0)
         print 'num_times: %s' % len(self._t_verts)
         self.tshp=(len(self._t_verts),)
-#        ttopo_tag=mesh.getTagHandle('SPATIAL_2')
-#        ttopo_set=iMesh.EntitySet(ttopo_tag[time_topo_set], mesh)
 
         self.parameters=OrderedDict()
-        self.indexing=[]
+        self.indexing={}
         for i in xrange(4):
+            topo_name='S{0}'.format(i)
+            self.indexing[topo_name] = {}
             try:
-                tag=mesh.getTagHandle('S{0}'.format(i))
+                tag=self.mesh.getTagHandle(topo_name)
             except iBase.TagNotFoundError:
-                self.indexing.append({})
                 continue
-            entset=iMesh.EntitySet(tag[mesh.rootSet], mesh)
+            entset=iMesh.EntitySet(tag[self.mesh.rootSet], self.mesh)
             ents=entset.getEntities(type=i)
             print '#_ents in cell_dim %s: %s' % (i, len(ents))
-            self.indexing.append({'NATURAL':(self.tshp+(len(ents),)),
-                                  'GRID':(self.tshp+self.gshp[i])})
+            self.indexing[topo_name]={'NATURAL':(self.tshp+(len(ents),)),
+                                  'GRID':(self.tshp+hindexing[i])}
             if len(ents) > 0:
-                # TODO: ASSUMES ALL TAGS ARE ON ALL ENTITIES
                 tags=self.mesh.getAllTags(self._t_verts[0])
-#                print 'all_tags: %s' % tags
-                dtags=[dt for dt in tags if dt.name.startswith('DATA_%s' % i)]
-#                print 'data_tags: %s' % dtags
-#                vents=ttopo_set.getEntities(type=0)
-#                if i is 0:
-#                    vents=ents.copy()
-#                else:
-#                    vents=ttopo_set.getEntAdj(ents, type=0)
+                print 'all_tags: %s' % [t.name for t in tags]
+                dtags=[dt for dt in tags if dt.name.startswith('DATA_%s' % topo_name)]
                 for tag in dtags:
-                    p=Parameter(self, tag, ents, None, self.tshp, self.gshp[i])
+                    p=Parameter(self, tag, ents, None, self.tshp, hindexing[i])
                     print '\t%s\t%s\t%s' % (tag.name, p.name, len(ents))
                     self.parameters[p.name] = p
 
