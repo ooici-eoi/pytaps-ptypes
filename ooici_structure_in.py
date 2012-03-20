@@ -138,6 +138,10 @@ for t in xrange(ntimes):
     tcoords+=[[tarr[t],0,0]]
 
 t_verts=mesh.createVtx(tcoords)
+t0_set=mesh.createEntSet(True)
+t0_set.add(t_verts)
+t0_tag=mesh.createTag('T0',1,iMesh.EntitySet)
+t0_tag[mesh.rootSet] = t0_set
 
 tline_verts=[]
 if len(t_verts) == 1:
@@ -147,12 +151,10 @@ else:
         tline_verts+=[t_verts[t],t_verts[t+1]]
 
 tline,status=mesh.createEntArr(iMesh.Topology.line_segment,tline_verts)
-time_set=mesh.createEntSet(True)
-time_set.add(t_verts)
-
-# Create a time_tag to reference the temporal information
-time_tag=mesh.createTag('T0',1,iMesh.EntitySet)
-time_tag[mesh.rootSet] = time_set
+t1_set=mesh.createEntSet(True)
+t1_set.add(tline)
+t1_tag=mesh.createTag('T1',1,iMesh.EntitySet)
+t1_tag[mesh.rootSet] = t1_set
 
 # Process each timestep
 for ti in xrange(ntimes):
