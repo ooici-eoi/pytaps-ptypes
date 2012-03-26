@@ -1,0 +1,9 @@
+[ncom]
+4_topo = {'axes':['time']} #time
+2_topo = {'axes':['lon','lat'],'flags':['centroid']} #x,y,z
+2_params = ['salinity','surf_el','water_temp','water_u','water_v'] #2d params
+
+[hfr]
+4_topo = {'axes':['time']}
+2_topo = {'axes':['lon','lat'],'flags':['centroid']}
+2_params = ['DOPx','DOPy','u','v']

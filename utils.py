@@ -3,20 +3,40 @@
 from itaps import iBase, iMesh, iGeom
 import numpy as np
 
-def print_mesh_types(mesh):
-    print "Mesh [%s]:" \
-          "\n\t%d EntitySets" \
-          "\n\t%d vertices" \
-          "\n\t%d faces" \
-          "\n\t%d edges" \
-          "\n\t%d regions" % (mesh,
+def print_mesh_types(mesh_in):
+    if isinstance(mesh_in, str or unicode):
+        mesh = iMesh.Mesh()
+        mesh.load(mesh_in)
+    else:
+        mesh=mesh_in
+    print "Mesh [{0}]:" \
+          "\n\t{1} EntitySets" \
+          "\n\t{2} Tags on rootSet: {7}" \
+          "\n\t{3} vertices" \
+          "\n\t{4} faces" \
+          "\n\t{5} edges" \
+          "\n\t{6} regions".format(mesh,
                               len(mesh.getEntSets()),
+                              len(mesh.getAllTags(mesh.rootSet)),
                               mesh.getNumOfType(iBase.Type.vertex),
                               mesh.getNumOfType(iBase.Type.face),
                               mesh.getNumOfType(iBase.Type.edge),
-                              mesh.getNumOfType(iBase.Type.region))
+                              mesh.getNumOfType(iBase.Type.region),
+                              [t.name for t in mesh.getAllTags(mesh.rootSet)])
+
+    return mesh
 
 from itertools import *
+
+def getEntitySetByTag(mesh, tag_name):
+    if isinstance(tag_name, str or unicode):
+        tag = mesh.getTagHandle(tag_name)
+    else:
+        tag = tag_name
+    return iMesh.EntitySet(tag[mesh.rootSet],mesh)
+
+def getEntitiesByTag(mesh, tag_name):
+    return getEntitySetByTag(mesh, tag_name).getEntities()
 
 def iterblocks(iterable, size, blocktype=list):
     iterator = iter(iterable)
@@ -244,10 +264,11 @@ def make_data_tags(mesh, ds, data_vars, data_dim):
 
         dpth=1
         shp=var.shape
-        if len(shp) is 4:
-            dsize=data_dim*shp[1]*dt.itemsize
-        else:
-            dsize=data_dim*dt.itemsize
+#        if len(shp) is 4:
+#            dsize=data_dim*shp[1]*dt.itemsize
+#        else:
+#            dsize=data_dim*dt.itemsize
+        dsize=data_dim*dt.itemsize
             ## By using the packing methods above, all tags can be made as the byte type
         mesh.createTag(pack_data_tag_name(varn, dt.char), dsize, np.byte)
 
