@@ -18,6 +18,8 @@ from collections import OrderedDict
 
 def make_test_mesh(x,y,z=1):
     mesh=iMesh.Mesh()
+    # Set the adjacency table such that all intermediate-topologies are generated
+    mesh.adjTable = np.array([[7, 4, 4, 1],[1, 7, 5, 5],[1, 5, 7, 5],[1, 5, 5, 7]], dtype='int32')
     coords=utils.make_coords(x,y,z)
     verts=mesh.createVtx(coords)
     if z is 1:

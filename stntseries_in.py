@@ -1,6 +1,6 @@
 from itaps import iBase, iMesh, iGeom
 from netCDF4 import Dataset
-import numpy
+import numpy as np
 from pylab import *
 import utils
 import argparse
@@ -26,6 +26,8 @@ else:
 ds=Dataset(in_path)
 
 mesh=iMesh.Mesh()
+# Set the adjacency table such that all intermediate-topologies are generated
+mesh.adjTable = np.array([[7, 4, 4, 1],[1, 7, 5, 5],[1, 5, 7, 5],[1, 5, 5, 7]], dtype='int32')
 
 coords_map=var_map['coords']
 z_cnt = 0

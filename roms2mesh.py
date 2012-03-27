@@ -2,7 +2,7 @@
 
 from itaps import iBase, iMesh, iGeom
 from netCDF4 import Dataset
-import numpy
+import numpy as np
 from pylab import *
 import utils
 import argparse
@@ -24,8 +24,8 @@ def make_data_tags(mesh, ds, data_vars, data_dim, cell_dim='s0'):
 
 
 parser = argparse.ArgumentParser(description='Convert a NetCDF structured grid into the OOICI Science Common Data Model (SciCDM) iMesh representation')
-parser.add_argument('--c', dest='config_file', default='./dataset_in.config', help='The dataset configuration file to read from')
-parser.add_argument('--k', dest='ds_key', default='ncom', help='The dataset_key of the dataset to process (from CONFIG_FILE)')
+parser.add_argument('--c', dest='config_file', default='./dataset_in.config', help='The dataset configuration file to read from; default is \'dataset_in.config\'')
+parser.add_argument('--k', dest='ds_key', default='ncom', help='The dataset_key of the dataset to process (from CONFIG_FILE); default is \'ncom\'')
 args=parser.parse_args()
         
 config_file=args.config_file
@@ -56,6 +56,8 @@ param_map=eval(parser.get(ds_key, 'param_map'))
 ds=Dataset(in_path)
 
 mesh=iMesh.Mesh()
+# Set the adjacency table such that all intermediate-topologies are generated
+mesh.adjTable = np.array([[7, 4, 4, 1],[1, 7, 5, 5],[1, 5, 7, 5],[1, 5, 5, 7]], dtype='int32')
 
 #TODO: Switch on value of s0_vars['flags'] (to deal with centroids, curvilinear, and whatnot)
 if 'centroid' in s0_vars['flags']:

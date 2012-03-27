@@ -2,6 +2,7 @@
 
 from itaps import iBase, iMesh
 import utils, argparse, time
+import numpy as np
 
 
 def make_2d(mesh, dims):
@@ -96,6 +97,8 @@ args=parser.parse_args()
 
 dims=args.cube_dims
 mesh=iMesh.Mesh()
+# Set the adjacency table such that all intermediate-topologies are generated
+mesh.adjTable = np.array([[7, 4, 4, 1],[1, 7, 5, 5],[1, 5, 7, 5],[1, 5, 5, 7]], dtype='int32')
 ents=[]
 if 4 > len(dims) >= 2:
     if dims[0] is 1 or dims[1] is 1:
