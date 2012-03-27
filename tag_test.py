@@ -4,6 +4,17 @@ from itaps import iBase, iMesh, iGeom
 import numpy as np
 
 mesh=iMesh.Mesh()
+# Set the adjacency table such that all intermediate-topologies are generated
+mesh.adjTable = np.array([[7, 4, 4, 1],[1, 7, 5, 5],[1, 5, 7, 5],[1, 5, 5, 7]], dtype='int32')
+
+# Delete the 'default' tags that we don't need/want
+mesh.destroyTag(mesh.getTagHandle('DIRICHLET_SET'), True)
+mesh.destroyTag(mesh.getTagHandle('GEOM_DIMENSION'), True)
+mesh.destroyTag(mesh.getTagHandle('GLOBAL_ID'), True)
+mesh.destroyTag(mesh.getTagHandle('MATERIAL_SET'), True)
+mesh.destroyTag(mesh.getTagHandle('NEUMANN_SET'), True)
+
+
 coords=[]
 for x in xrange(10):
     coords+=[[x,0,0]]
@@ -56,7 +67,7 @@ a_tag[verts] = vdata
 a_tag[edges[0]] = edata[0]
 a_tag[edges[-1]] = edata[-1]
 
-b_tag=mesh.createTag('tab_b', 1, np.int32)
+b_tag=mesh.createTag('tag_b', 1, np.int32)
 # tag the first and last vertices
 b_tag[verts[0]] = vdata[0]
 b_tag[verts[-1]] = vdata[-1]
