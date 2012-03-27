@@ -231,7 +231,7 @@ class Structure(object):
             if len(ents) > 0:
                 tags=self.mesh.getAllTags(self._t_verts[0])
                 dtags=[dt for dt in tags if dt.name.startswith('DATA_{0}'.format(topo_key))]
-                print 'tags on {0}: {1}'.format(topo_key, [t.name for t in tags])
+                print 'tags on {0}: {1}'.format(topo_key, [t.name for t in dtags])
                 for tag in dtags:
                     p=Parameter(self, tag, ents)
                     print '\t%s\t%s\t%s' % (tag.name, p.name, len(ents))
