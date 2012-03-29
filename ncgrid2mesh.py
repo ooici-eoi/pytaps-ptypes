@@ -50,6 +50,7 @@ s0_vars=eval(parser.get(ds_key,'S0_vars'))
 
 param_map=eval(parser.get(ds_key, 'param_map'))
 
+#raise Exception('bail')
 
 
 # Load and process the dataset
@@ -61,9 +62,6 @@ mesh.adjTable = np.array([[7, 4, 4, 1],[1, 7, 5, 5],[1, 5, 7, 5],[1, 5, 5, 7]], 
 
 #TODO: Switch on value of s0_vars['flags'] (to deal with centroids, curvilinear, and whatnot)
 if 'centroid' in s0_vars['flags']:
-    if s0_vars['z_var']:
-        zarr=ds.variables[s0_vars['z_var']][:]
-        z_cnt=len(zarr)
 
     x_coords=ds.variables[s0_vars['x_var']][:]
     y_coords=ds.variables[s0_vars['y_var']][:]
@@ -71,8 +69,12 @@ if 'centroid' in s0_vars['flags']:
     x_cnt=len(x_coords)
     y_cnt=len(y_coords)
 
-    z=0
-    coords=[[x_coords[x],y_coords[y],z] for y in xrange(y_cnt) for x in xrange(x_cnt)]
+    if s0_vars['z_var']:
+        z_coords=ds.variables[s0_vars['z_var']][:]
+        #        z_coords=np.array([0]) # This locks things to 1 level - make sure the slicing in 'dataset_in.config' matches if you uncomment...
+        z_cnt=len(z_coords)
+
+    coords=[[x_coords[x],y_coords[y],z_coords[z]] for z in xrange(z_cnt) for y in xrange(y_cnt) for x in xrange(x_cnt)]
 elif 'curvilinear' in s0_vars['flags']:
     x_coords=ds.variables[s0_vars['x_var']][:]
     x_shp=x_coords.shape
@@ -84,8 +86,11 @@ elif 'curvilinear' in s0_vars['flags']:
     x_cnt=x_shp[0]
     y_cnt=x_shp[1]
 
+    # TODO: Deal with z properly
+
     z=0
     z_coords=np.zeros(len(x_coords))
+    z_cnt=len(z_coords)
 
     coords=np.column_stack([x_coords,y_coords,z_coords])
 else:
@@ -101,12 +106,42 @@ s0_len=len(verts)
 s0_tag=mesh.createTag('S0', 1, iMesh.EntitySet)
 s0_tag[mesh.rootSet]=s0_set
 
+if 'S3' in param_map:
+    # Create hexahedron entities
+    # Build the appropriate vertex-array from the vertices
+    vert_arr = utils.make_hexahedron_vertex_array(verts=verts, x_cnt=x_cnt, y_cnt=y_cnt, z_cnt=z_cnt)
+
+    cubes,status=mesh.createEntArr(iMesh.Topology.hexahedron, vert_arr)
+
+    # Create the entity_set of dimension-3
+    s3_set=mesh.createEntSet(True)
+    s3_set.add(cubes)
+    s3_len=len(cubes)
+    s3_tag=mesh.createTag('S3', 1, iMesh.EntitySet)
+    s3_tag[mesh.rootSet]=s3_set
+else:
+    cubes=None
+
+if 'S3_S2H1' in param_map:
+    # Create an entity set containing only the top 'plane' of faces
+    if not cubes:
+        raise Exception("Cannot create S3_S2H1 EntitySet without S3 Entities")
+    slice_size=(x_cnt-1)*(y_cnt-1)
+    s3_2h1_set=mesh.createEntSet(ordered=True)
+    # The 5th face (index 4) is always the top
+    ents=[x[4] for x in mesh.getEntAdj(cubes[0:slice_size], iBase.Type.face)]
+    s3_2h1_set.add(ents)
+    s3_2h1_len=len(ents)
+    s3_2h1_tag=mesh.createTag('S3_S2H1', 1, iMesh.EntitySet)
+    s3_2h1_tag[mesh.rootSet]=s3_2h1_set
+
+
 if 'S2' in param_map:
-    ## Create quadrilateral entities
-    ## Build the appropriate vertex-array from the vertices
+    # Create quadrilateral entities
+    # Build the appropriate vertex-array from the vertices
     vert_arr = utils.make_quadrilateral_vertex_array(verts=verts, x_cnt=x_cnt)
 
-    quads,status=mesh.createEntArr(iMesh.Topology.quadrilateral,vert_arr)
+    quads,status=mesh.createEntArr(iMesh.Topology.quadrilateral, vert_arr)
 
     # Create the entity_set of dimension-2
     s2_set=mesh.createEntSet(True)
@@ -116,8 +151,12 @@ if 'S2' in param_map:
     s2_tag[mesh.rootSet]=s2_set
 
     make_data_tags(mesh, ds, param_map['S2'], s2_len, 'S2')
+else:
+    quads=None
 
-if 'S1X' in param_map or 'S1Y' in param_map:
+if 'S2_S1X' in param_map or 'S2_S1Y' in param_map:
+    if not quads:
+        raise Exception("Cannot create S2_S1X or S2_S1Y EntitySets without S2 Entities")
     # Pull out the 'x_edges' and 'y_edges'
     qedges=mesh.getEntAdj(quads,type=1)
     x_edges=[]
