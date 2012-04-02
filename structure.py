@@ -13,7 +13,7 @@ __licence__ = 'Apache 2.0'
 from itaps import iMesh, iBase
 import numpy as np
 from numpy import random as rnd
-import utils
+import utils, time
 from collections import OrderedDict
 
 def unpack_data_tag_name(data_tag_name):
@@ -28,7 +28,7 @@ class Parameter(object):
         self._index_keys=[]
 
         # Break apart the tag to it's component info
-        self.cell_dim, self.data_type, self.name = unpack_data_tag_name(self._tag_hndl.name)
+        self._cell_dim, self.data_type, self.name = unpack_data_tag_name(self._tag_hndl.name)
 
         self._init_indexing()
 
@@ -39,7 +39,7 @@ class Parameter(object):
         self._index_keys=[]
 
         # Get the current set of indexings, make an attribute for each and add the name to self._index_keys
-        cell_indexings=self._pstruct.indexing[self.cell_dim]
+        cell_indexings=self._pstruct.indexing[self._cell_dim]
         for key in cell_indexings:
             ik='i{0}'.format(key)
             ck='i{0}_CDS'.format(key)
@@ -56,9 +56,16 @@ class Parameter(object):
     def shape(self):
         s=''
         for k in self._index_keys:
-            s+='{0} | {1}; '.format(k, getattr(self, k).shape)
+            s+='{0} {1}; '.format(k, getattr(self, k).shape)
 
         return s
+
+    @property
+    def topology(self):
+        return self._cell_dim
+
+    def __repr__(self):
+        return '{self.name}:<{self._cell_dim}> {self.shape}'.format(self=self)
 
 class CoordinateIndexing(object):
     def __init__(self, parent_parameter, shape):
@@ -184,6 +191,8 @@ class ParameterIndexing(object):
 
 class Structure(object):
     def __init__(self, mesh_in, index_key):
+        t0=time.time()
+        tm=time.time()
         if isinstance(mesh_in, str or unicode):
             try:
                 self.mesh=iMesh.Mesh()
@@ -194,8 +203,8 @@ class Structure(object):
             self.mesh=mesh_in
         else:
             raise TypeError('mesh_in is of unknown type: {0}'.format(type(mesh_in)))
-
-        print 'mesh: %s' % self.mesh
+        print 'Loaded mesh \'{0}\' in {1:.1f} ms'.format(self.mesh, ((time.time()-tm)*1000))
+#        print 'mesh: %s' % self.mesh
 
         if isinstance(index_key, str or unicode):
             from ConfigParser import SafeConfigParser
@@ -230,12 +239,14 @@ class Structure(object):
                                   'GRID':(self.tshp+hindexing[topo_key])}
             if len(ents) > 0:
                 tags=self.mesh.getAllTags(self._t_verts[0])
-                dtags=[dt for dt in tags if dt.name.startswith('DATA_{0}'.format(topo_key))]
+                dtags=[dt for dt in tags if dt.name.startswith('DATA_{0}_'.format(topo_key))]
                 print 'tags on {0}: {1}'.format(topo_key, [t.name for t in dtags])
                 for tag in dtags:
                     p=Parameter(self, tag, ents)
                     print '\t%s\t%s\t%s' % (tag.name, p.name, len(ents))
                     self.parameters[p.name] = p
+
+        print 'Initialized Structure in {:.1f} ms'.format(((time.time()-t0)*1000))
 
     def reinitialize(self):
         for pk in self.parameters:

@@ -29,14 +29,20 @@ def print_mesh_types(mesh_in):
 from itertools import *
 
 def getEntitySetByTag(mesh, tag_name):
-    if isinstance(tag_name, str or unicode):
-        tag = mesh.getTagHandle(tag_name)
-    else:
-        tag = tag_name
-    return iMesh.EntitySet(tag[mesh.rootSet],mesh)
+    try:
+        if isinstance(tag_name, str or unicode):
+            tag = mesh.getTagHandle(tag_name)
+        else:
+            tag = tag_name
+        return iMesh.EntitySet(tag[mesh.rootSet],mesh)
+    except iBase.TagNotFoundError as err:
+        raise err
 
 def getEntitiesByTag(mesh, tag_name):
-    return getEntitySetByTag(mesh, tag_name).getEntities()
+    try:
+        return getEntitySetByTag(mesh, tag_name).getEntities()
+    except iBase.TagNotFoundError as err:
+        raise err
 
 def iterblocks(iterable, size, blocktype=list):
     iterator = iter(iterable)
@@ -49,7 +55,7 @@ def iterblocks(iterable, size, blocktype=list):
 
 def make_coords(x_cnt, y_cnt, z_cnt):
     if z_cnt > 1:
-        coords=[[x,y,z] for z in xrange(z_cnt) for y in xrange(y_cnt) for x in xrange(x_cnt)]
+        coords=[[x,y,-z] for z in xrange(z_cnt) for y in xrange(y_cnt) for x in xrange(x_cnt)]
     else:
         coords=[[x,y,0] for y in xrange(y_cnt) for x in xrange(x_cnt)]
 
